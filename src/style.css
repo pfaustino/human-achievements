@@ -131,7 +131,7 @@ body {
 }
 
 .card {
-  max-height: min(72vh, 640px);
+  max-height: min(80vh, 760px);
   overflow: auto;
 }
 
@@ -206,6 +206,15 @@ button.ghost {
 .card.live {
   border-color: var(--teal);
   box-shadow: 0 0 0 1px rgba(126, 200, 196, 0.28);
+}
+
+.card-wiki-image {
+  display: block;
+  width: 100%;
+  max-height: 260px;
+  object-fit: contain;
+  margin: 0 0 12px;
+  background: #0a0f16;
 }
 
 .mag {

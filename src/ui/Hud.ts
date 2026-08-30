@@ -38,6 +38,7 @@ export class Hud {
   private readonly hintEl: HTMLElement
   private seeking = false
   private inventions: Invention[] = []
+  private wikiImageRequest = 0
 
   constructor(root: HTMLElement, handlers: HudHandlers) {
     const source = catalogSource()
@@ -300,6 +301,7 @@ export class Hud {
   }
 
   showEvent(event: Invention): void {
+    const requestId = ++this.wikiImageRequest
     this.cardTitleEl.textContent = event.title
     this.cardPanel.classList.add('live')
     const inventors = event.inventor?.length ? event.inventor.join(', ') : ''
@@ -333,12 +335,36 @@ export class Hud {
           : ''
       }
     `
+    void this.loadWikiImage(event, requestId)
   }
 
   clearEvent(): void {
+    this.wikiImageRequest += 1
     this.cardTitleEl.textContent = 'Invention'
     this.cardPanel.classList.remove('live')
     this.cardEl.innerHTML = `<p class="muted">Click a milestone, or play through history.</p>`
+  }
+
+  private async loadWikiImage(event: Invention, requestId: number): Promise<void> {
+    const title = wikipediaPageTitle(event)
+    if (!title) return
+    try {
+      const encoded = encodeURIComponent(title.replaceAll(' ', '_'))
+      const response = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encoded}`)
+      if (!response.ok || requestId !== this.wikiImageRequest) return
+      const data = (await response.json()) as WikiSummary
+      if (requestId !== this.wikiImageRequest) return
+      const src = wikiImageSource(data)
+      if (!src) return
+      const img = document.createElement('img')
+      img.className = 'card-wiki-image'
+      img.src = src
+      img.alt = event.title
+      img.addEventListener('error', () => img.remove())
+      this.cardEl.prepend(img)
+    } catch {
+      // Missing or blocked Wikipedia image should not break the card.
+    }
   }
 
   private renderSearch(query: string): void {
@@ -447,4 +473,38 @@ function escapeHtml(value: string): string {
     .replaceAll('<', '&lt;')
     .replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;')
+}
+
+type WikiSummary = {
+  thumbnail?: { source?: string }
+  originalimage?: { source?: string }
+}
+
+function wikipediaPageTitle(event: Invention): string | null {
+  const titled = event.wikipediaTitle?.trim()
+  if (titled) return titled
+  const url = event.wikipediaUrl
+  if (!url) return null
+  try {
+    const path = new URL(url).pathname
+    const slug = path.startsWith('/wiki/') ? path.slice('/wiki/'.length) : ''
+    if (!slug) return null
+    return decodeURIComponent(slug)
+  } catch {
+    return null
+  }
+}
+
+function wikiImageSource(data: WikiSummary): string | null {
+  const src = data.originalimage?.source ?? data.thumbnail?.source
+  if (!src) return null
+  try {
+    const parsed = new URL(src)
+    const host = parsed.hostname
+    const allowed = host === 'upload.wikimedia.org' || host.endsWith('.wikipedia.org')
+    if (parsed.protocol !== 'https:' || !allowed) return null
+    return src
+  } catch {
+    return null
+  }
 }
