@@ -3,7 +3,7 @@ import { formatClock, formatYear, inferPrecision, kyaToYear, myaToYear } from '.
 import { axisToYear, yearToAxis } from './scale.ts'
 import { loadEras, loadInventions } from './catalog.ts'
 import type { Invention } from './types.ts'
-import { Playback } from '../timeline/Playback.ts'
+import { Playback, dwellMs } from '../timeline/Playback.ts'
 
 describe('formatYear', () => {
   it('formats BCE and CE without a year zero', () => {
@@ -96,6 +96,12 @@ describe('Playback', () => {
   const events = loadInventions().filter((item) => item.tier <= 2).slice(0, 12)
   const eras = loadEras()
 
+  it('gives every tier a dwell so autoplay cannot skip events', () => {
+    expect(dwellMs(fakeInvention('t1', 1, 'One', 1))).toBe(1700)
+    expect(dwellMs(fakeInvention('t2', 1, 'Two', 2))).toBe(1100)
+    expect(dwellMs(fakeInvention('t3', 1, 'Three', 3))).toBe(700)
+  })
+
   it('emits the first featured invention while playing forward', () => {
     const playback = new Playback()
     playback.setEvents(events, eras, 12_000)
@@ -169,7 +175,64 @@ describe('Playback', () => {
     expect(playback.step(1)?.title).toBe('Bone tool')
     expect(playback.step(-1)?.title).toMatch(/language/i)
   })
+
+  it('plays every event from Acheulean including origin of language', () => {
+    const all = loadInventions()
+    const playback = new Playback()
+    playback.setEvents(all, loadEras(), 12_000)
+    const acheulean = all.find((item) => item.title === 'Acheulean')
+    expect(acheulean).toBeTruthy()
+    playback.selectEvent(acheulean!)
+    playback.playing = true
+    const seen = collectPlayTitles(playback, 4)
+    expect(seen[0]).toMatch(/language/i)
+    expect(seen[1]).toBe('Bone tool')
+    expect(seen[2]).toBe('Control of fire')
+    expect(seen[3]).toBe('Cooking')
+  })
+
+  it('plays each same-year invention without skipping', () => {
+    const sameYear = [
+      fakeInvention('same-a', 1876, 'Alpha', 3),
+      fakeInvention('same-b', 1876, 'Bravo', 2),
+      fakeInvention('same-c', 1876, 'Charlie', 1),
+    ]
+    const playback = new Playback()
+    playback.setEvents(sameYear, [], 12_000)
+    playback.startFromBeginning(12_000)
+    expect(collectPlayIds(playback, 3)).toEqual(['same-a', 'same-b', 'same-c'])
+  })
+
+  it('plays every event in reverse including origin of language', () => {
+    const all = loadInventions()
+    const playback = new Playback()
+    playback.setEvents(all, loadEras(), 12_000)
+    const bone = all.find((item) => item.title === 'Bone tool' && item.dateStart === -1_500_000)
+    expect(bone).toBeTruthy()
+    playback.selectEvent(bone!)
+    playback.setDirection(-1)
+    playback.playing = true
+    const seen = collectPlayTitles(playback, 2)
+    expect(seen[0]).toMatch(/language/i)
+    expect(seen[1]).toBe('Acheulean')
+  })
 })
+
+function collectPlayTitles(playback: Playback, count: number): string[] {
+  const seen: string[] = []
+  for (let i = 0; i < 8000 && seen.length < count; i += 1) {
+    playback.tick(50, (event) => seen.push(event.title))
+  }
+  return seen
+}
+
+function collectPlayIds(playback: Playback, count: number): string[] {
+  const seen: string[] = []
+  for (let i = 0; i < 8000 && seen.length < count; i += 1) {
+    playback.tick(50, (event) => seen.push(event.id))
+  }
+  return seen
+}
 
 function fakeInvention(id: string, year: number, title: string, tier: 1 | 2 | 3): Invention {
   return {

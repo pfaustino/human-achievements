@@ -5,7 +5,8 @@ export type Direction = 1 | -1
 
 export function dwellMs(event: Invention): number {
   if (event.tier === 1) return 1700
-  return 0
+  if (event.tier === 2) return 1100
+  return 700
 }
 
 export class Playback {
@@ -139,7 +140,7 @@ export class Playback {
 
     let emitted = 0
     while (emitted < 6) {
-      const next = this.peekFeatured()
+      const next = this.peekEvent()
       if (!next) break
       const crossed = this.direction === 1 ? this.playhead >= next.dateStart : this.playhead <= next.dateStart
       if (!crossed) break
@@ -177,7 +178,7 @@ export class Playback {
   private focusEvent(event: Invention, autoDwell: boolean): void {
     this.playhead = event.dateStart
     this.focused = event
-    const index = this.featured.findIndex((item) => item.id === event.id)
+    const index = this.events.findIndex((item) => item.id === event.id)
     this.cursor = index + this.direction
     if (autoDwell) {
       const dwell = dwellMs(event) / Math.min(1.6, Math.max(0.7, this.speed))
@@ -189,25 +190,25 @@ export class Playback {
     }
   }
 
-  private peekFeatured(): Invention | null {
-    if (this.cursor < 0 || this.cursor >= this.featured.length) return null
-    return this.featured[this.cursor]
+  private peekEvent(): Invention | null {
+    if (this.cursor < 0 || this.cursor >= this.events.length) return null
+    return this.events[this.cursor]
   }
 
   private syncCursor(): void {
     if (this.direction === 1) {
-      this.cursor = this.featured.findIndex((event) => event.dateStart > this.playhead)
-      if (this.cursor < 0) this.cursor = this.featured.length
+      this.cursor = this.events.findIndex((event) => event.dateStart > this.playhead)
+      if (this.cursor < 0) this.cursor = this.events.length
     } else {
-      let index = this.featured.length - 1
-      while (index >= 0 && this.featured[index].dateStart > this.playhead) index -= 1
+      let index = this.events.length - 1
+      while (index >= 0 && this.events[index].dateStart > this.playhead) index -= 1
       this.cursor = index
     }
   }
 
   private syncCursorFromFocused(): void {
     if (this.focused) {
-      const index = this.featured.findIndex((event) => event.id === this.focused?.id)
+      const index = this.events.findIndex((event) => event.id === this.focused?.id)
       this.cursor = index + this.direction
       return
     }
