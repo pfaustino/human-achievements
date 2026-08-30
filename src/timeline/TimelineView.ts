@@ -352,7 +352,7 @@ export class TimelineView {
       const lane = LANE_ORDER.indexOf(event.categories[0] ?? 'survival')
       const x = this.axisToX(axis, width, pad.left, pad.right)
       const y = pad.top + ((Math.max(0, lane) + 0.5) / LANE_ORDER.length) * innerH
-      const r = event.tier === 1 ? 5.2 : event.tier === 2 ? 3.4 : 2.1
+      const r = event.tier === 1 ? 8.5 : event.tier === 2 ? 6 : 4.2
       const cat = this.categories.find((item) => item.id === event.categories[0])
       const color = cat?.color ?? '#d4b06a'
       const selected = event.id === this.selectedId
