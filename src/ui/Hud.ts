@@ -3,15 +3,11 @@ import { formatClock, isUncertain } from '../data/dates.ts'
 import type { Category, Era, Invention } from '../data/types.ts'
 
 export type HudHandlers = {
-  onSpeed: (speed: number) => void
   onPlayToggle: () => void
   onPlayHistory: () => void
   onDirection: (direction: 1 | -1) => void
   onStep: (direction: -1 | 1) => void
   onSeek: (fraction: number) => void
-  onResetView: () => void
-  onJumpStart: () => void
-  onJumpPresent: () => void
   onEra: (era: Era) => void
   onCategory: (id: string) => void
   onHistorical: (label: string) => void
@@ -68,25 +64,9 @@ export class Hud {
           <div class="panel-body">
             <p class="lede">A visual journey from the earliest stone tools to artificial intelligence. Time is compressed in deep prehistory and expands toward the present, so acceleration becomes visible.</p>
             <div class="row" role="group" aria-label="Playback">
-              <button type="button" id="dir-reverse" title="Play backward">◀ Reverse</button>
+              <button type="button" id="dir-reverse" title="Play backward, or step back when paused">◀ Reverse</button>
               <button type="button" id="play-toggle" title="Space" aria-keyshortcuts="Space">Play</button>
-              <button type="button" id="dir-forward" class="active" title="Play forward">Forward ▶</button>
-            </div>
-            <div class="row" role="group" aria-label="Journey">
-              <button type="button" id="play-history">Play history</button>
-              <button type="button" id="jump-start">Beginning</button>
-              <button type="button" id="jump-now">Present</button>
-              <button type="button" id="reset-view">Full span</button>
-            </div>
-            <div class="row" role="group" aria-label="Step">
-              <button type="button" id="step-back" title="Left arrow">‹ Previous</button>
-              <button type="button" id="step-fwd" title="Right arrow">Next ›</button>
-            </div>
-            <div class="row" role="group" aria-label="Playback speed">
-              <button type="button" data-speed="0.5">0.5×</button>
-              <button type="button" data-speed="1" class="active">1×</button>
-              <button type="button" data-speed="2">2×</button>
-              <button type="button" data-speed="4">4×</button>
+              <button type="button" id="dir-forward" class="active" title="Play forward, or step ahead when paused">Forward ▶</button>
             </div>
             <label class="search-label" for="search">Search</label>
             <input id="search" type="search" placeholder="Printing press, Gutenberg, Bronze Age…" autocomplete="off" />
@@ -167,21 +147,9 @@ export class Hud {
     root.querySelectorAll<HTMLButtonElement>('.panel-toggle').forEach((button) => {
       button.addEventListener('click', () => this.togglePanel(button))
     })
-    root.querySelectorAll<HTMLButtonElement>('[data-speed]').forEach((button) => {
-      button.addEventListener('click', () => {
-        this.setToggleGroup('[data-speed]', button)
-        handlers.onSpeed(Number(button.dataset.speed))
-      })
-    })
     this.playBtn.addEventListener('click', () => handlers.onPlayToggle())
-    root.querySelector('#play-history')?.addEventListener('click', () => handlers.onPlayHistory())
     root.querySelector('#dir-reverse')?.addEventListener('click', () => handlers.onDirection(-1))
     root.querySelector('#dir-forward')?.addEventListener('click', () => handlers.onDirection(1))
-    root.querySelector('#step-back')?.addEventListener('click', () => handlers.onStep(-1))
-    root.querySelector('#step-fwd')?.addEventListener('click', () => handlers.onStep(1))
-    root.querySelector('#reset-view')?.addEventListener('click', () => handlers.onResetView())
-    root.querySelector('#jump-start')?.addEventListener('click', () => handlers.onJumpStart())
-    root.querySelector('#jump-now')?.addEventListener('click', () => handlers.onJumpPresent())
     root.querySelector('#intro-play')?.addEventListener('click', () => {
       this.hideIntro()
       handlers.onPlayHistory()
@@ -460,12 +428,6 @@ export class Hud {
     const collapsed = panel.classList.toggle('collapsed')
     button.textContent = collapsed ? 'Expand' : 'Collapse'
     button.setAttribute('aria-expanded', collapsed ? 'false' : 'true')
-  }
-
-  private setToggleGroup(selector: string, active: HTMLButtonElement): void {
-    active.parentElement?.querySelectorAll<HTMLButtonElement>(selector).forEach((button) => {
-      button.classList.toggle('active', button === active)
-    })
   }
 }
 

@@ -7,7 +7,7 @@ import {
   loadInventions,
   matchesFilters,
 } from './data/catalog.ts'
-import { formatClock, PRESENT_YEAR } from './data/dates.ts'
+import { formatClock } from './data/dates.ts'
 import type { Era, Invention } from './data/types.ts'
 import { Playback } from './timeline/Playback.ts'
 import { TimelineView } from './timeline/TimelineView.ts'
@@ -42,9 +42,6 @@ const timeline = new TimelineView(stage, {
 })
 
 const handlers: HudHandlers = {
-  onSpeed: (speed) => {
-    playback.speed = speed
-  },
   onPlayToggle: () => {
     playback.playing = !playback.playing
     followPlayhead = playback.playing
@@ -54,12 +51,14 @@ const handlers: HudHandlers = {
   },
   onPlayHistory: () => startJourney(PLAY_MS),
   onDirection: (direction) => {
+    if (!playback.playing) {
+      stepEvent(direction)
+      return
+    }
     playback.setDirection(direction)
-    playback.playing = true
     followPlayhead = true
     timeline.setRevealOnly(true)
     hud.setDirection(direction)
-    hud.setPlaying(true)
     hud.setStatus(catalogStatus)
   },
   onStep: (direction) => stepEvent(direction),
@@ -75,12 +74,6 @@ const handlers: HudHandlers = {
     }
     syncStats()
   },
-  onResetView: () => {
-    followPlayhead = false
-    timeline.resetView()
-  },
-  onJumpStart: () => jumpTo(-3_300_000),
-  onJumpPresent: () => jumpTo(PRESENT_YEAR),
   onEra: (era) => {
     followPlayhead = false
     playback.seekYear(era.start)
@@ -142,21 +135,6 @@ function startJourney(duration: number): void {
   hud.setPlaying(true)
   hud.setDirection(1)
   hud.setStatus('Playing through 3.3 million years…')
-}
-
-function jumpTo(year: number): void {
-  followPlayhead = false
-  const event = playback.seekYear(year)
-  timeline.setPlayhead(year)
-  const pad = Math.max(30, Math.abs(year) * 0.015)
-  timeline.zoomToYears(year - pad, year + pad)
-  hud.setClock(year, eraCaption(year))
-  hud.setFraction(playback.fraction())
-  if (event) {
-    timeline.setSelected(event.id)
-    hud.showEvent(event)
-  }
-  syncStats()
 }
 
 function focusEvent(event: Invention, zoom: boolean): void {
