@@ -1,0 +1,301 @@
+{
+  "eras": [
+    {
+      "id": "paleolithic",
+      "label": "Paleolithic",
+      "shortLabel": "Paleolithic",
+      "layer": "archaeological",
+      "start": -3300000,
+      "end": -10000,
+      "color": "#c4a574",
+      "blurb": "The long age of flaked stone tools, fire, and mobile hunter-gatherer life. Dates mark earliest known archaeological evidence and can shift as new finds appear.",
+      "featured": true
+    },
+    {
+      "id": "lower-paleolithic",
+      "label": "Lower Paleolithic",
+      "shortLabel": "Lower Paleolithic",
+      "layer": "archaeological",
+      "start": -3300000,
+      "end": -300000,
+      "color": "#b08958",
+      "blurb": "Earliest flaked stone industries, from Lomekwi and Oldowan cores to Acheulean handaxes.",
+      "featured": false
+    },
+    {
+      "id": "middle-paleolithic",
+      "label": "Middle Paleolithic",
+      "shortLabel": "Middle Paleolithic",
+      "layer": "archaeological",
+      "start": -300000,
+      "end": -40000,
+      "color": "#c4a574",
+      "blurb": "Prepared-core tools, more reliable fire, pigments, and the first personal ornaments.",
+      "featured": false
+    },
+    {
+      "id": "upper-paleolithic",
+      "label": "Upper Paleolithic",
+      "shortLabel": "Upper Paleolithic",
+      "layer": "archaeological",
+      "start": -40000,
+      "end": -10000,
+      "color": "#d4b88a",
+      "blurb": "Needles, musical instruments, representational art, and more specialized hunting gear.",
+      "featured": false
+    },
+    {
+      "id": "mesolithic",
+      "label": "Mesolithic",
+      "shortLabel": "Mesolithic",
+      "layer": "archaeological",
+      "start": -15000,
+      "end": -8000,
+      "color": "#9aa87a",
+      "blurb": "A transitional world of microliths, fishing, and more intensive use of wild resources.",
+      "featured": false
+    },
+    {
+      "id": "neolithic",
+      "label": "Neolithic",
+      "shortLabel": "Neolithic",
+      "layer": "archaeological",
+      "start": -10000,
+      "end": -4500,
+      "color": "#7d9b6a",
+      "blurb": "Humanity begins shifting from mobile foraging toward farming, animal domestication, and lasting settlements.",
+      "featured": true
+    },
+    {
+      "id": "chalcolithic",
+      "label": "Copper Age",
+      "shortLabel": "Copper Age",
+      "layer": "archaeological",
+      "start": -5000,
+      "end": -3300,
+      "color": "#c9843a",
+      "blurb": "Native copper and early smelting sit beside stone tools as metallurgy begins.",
+      "featured": false
+    },
+    {
+      "id": "bronze-age",
+      "label": "Bronze Age",
+      "shortLabel": "Bronze Age",
+      "layer": "archaeological",
+      "start": -3300,
+      "end": -1200,
+      "color": "#c9843a",
+      "blurb": "Tin-bronze, writing, cities, and long-distance trade reshape the eastern Mediterranean and beyond.",
+      "featured": true
+    },
+    {
+      "id": "iron-age",
+      "label": "Iron Age",
+      "shortLabel": "Iron Age",
+      "layer": "archaeological",
+      "start": -1200,
+      "end": -500,
+      "color": "#8a8490",
+      "blurb": "Ironworking spreads. Tools and weapons become cheaper to produce and more widely available.",
+      "featured": true
+    },
+    {
+      "id": "prehistory",
+      "label": "Prehistory",
+      "shortLabel": "Prehistory",
+      "layer": "historical",
+      "start": -3300000,
+      "end": -3300,
+      "color": "#6e7a6a",
+      "blurb": "The span before written records — known through archaeology, not contemporary texts.",
+      "featured": false
+    },
+    {
+      "id": "ancient",
+      "label": "Ancient World",
+      "shortLabel": "Ancient",
+      "layer": "historical",
+      "start": -3300,
+      "end": 500,
+      "color": "#d4b06a",
+      "blurb": "Cities, states, writing, and classical science from the first urban cultures through late antiquity.",
+      "featured": true
+    },
+    {
+      "id": "classical",
+      "label": "Classical Antiquity",
+      "shortLabel": "Classical",
+      "layer": "historical",
+      "start": -800,
+      "end": 500,
+      "color": "#c9a05a",
+      "blurb": "The Mediterranean and neighboring worlds of Greece, Rome, Persia, and their contemporaries.",
+      "featured": false
+    },
+    {
+      "id": "medieval",
+      "label": "Medieval",
+      "shortLabel": "Medieval",
+      "layer": "historical",
+      "start": 500,
+      "end": 1450,
+      "color": "#8b6b9e",
+      "blurb": "Paper, gunpowder, the compass, and mechanical clocks travel and transform across Afro-Eurasia.",
+      "featured": true
+    },
+    {
+      "id": "early-modern",
+      "label": "Early Modern",
+      "shortLabel": "Early Modern",
+      "layer": "historical",
+      "start": 1450,
+      "end": 1760,
+      "color": "#6b8f71",
+      "blurb": "Print, scientific instruments, and global maritime exchange accelerate the circulation of ideas.",
+      "featured": true
+    },
+    {
+      "id": "modern",
+      "label": "Modern",
+      "shortLabel": "Modern",
+      "layer": "historical",
+      "start": 1760,
+      "end": 1945,
+      "color": "#6b8cae",
+      "blurb": "Industry, fossil energy, and laboratory science remake everyday life.",
+      "featured": false
+    },
+    {
+      "id": "contemporary",
+      "label": "Contemporary",
+      "shortLabel": "Contemporary",
+      "layer": "historical",
+      "start": 1945,
+      "end": 2026,
+      "color": "#7ec8c4",
+      "blurb": "Nuclear energy, spaceflight, computing, and planetary-scale networks.",
+      "featured": false
+    },
+    {
+      "id": "pre-industrial",
+      "label": "Pre-industrial",
+      "shortLabel": "Pre-industrial",
+      "layer": "technology",
+      "start": -3300000,
+      "end": 1760,
+      "color": "#7a7468",
+      "blurb": "Muscle, water, wind, and wood — technologies that do not yet run on fossil steam.",
+      "featured": false
+    },
+    {
+      "id": "first-industrial",
+      "label": "Industrial Revolution",
+      "shortLabel": "Industrial",
+      "layer": "technology",
+      "start": 1760,
+      "end": 1870,
+      "color": "#6b8cae",
+      "blurb": "Steam, factories, mechanized textiles, and iron railways begin the modern energy economy.",
+      "featured": true
+    },
+    {
+      "id": "second-industrial",
+      "label": "Second Industrial Revolution",
+      "shortLabel": "2nd Industrial",
+      "layer": "technology",
+      "start": 1870,
+      "end": 1914,
+      "color": "#5a9bb0",
+      "blurb": "Electricity, steel, chemicals, telegraphs, and the internal combustion engine.",
+      "featured": false
+    },
+    {
+      "id": "machine-age",
+      "label": "Machine Age",
+      "shortLabel": "Machine Age",
+      "layer": "technology",
+      "start": 1880,
+      "end": 1945,
+      "color": "#8aa0b8",
+      "blurb": "Mass production, automobiles, aircraft, radio, and the first electronic computers.",
+      "featured": false
+    },
+    {
+      "id": "atomic-age",
+      "label": "Atomic Age",
+      "shortLabel": "Atomic Age",
+      "layer": "technology",
+      "start": 1945,
+      "end": 1970,
+      "color": "#d4a017",
+      "blurb": "Controlled nuclear chain reactions enter weapons, power, and medicine.",
+      "featured": true
+    },
+    {
+      "id": "space-age",
+      "label": "Space Age",
+      "shortLabel": "Space Age",
+      "layer": "technology",
+      "start": 1957,
+      "end": 2026,
+      "color": "#7aa2d4",
+      "blurb": "Orbital flight, satellites, and human travel beyond Earth.",
+      "featured": true
+    },
+    {
+      "id": "jet-age",
+      "label": "Jet Age",
+      "shortLabel": "Jet Age",
+      "layer": "technology",
+      "start": 1952,
+      "end": 2026,
+      "color": "#6a90b8",
+      "blurb": "Jet propulsion makes intercontinental travel routine.",
+      "featured": false
+    },
+    {
+      "id": "digital-revolution",
+      "label": "Digital Revolution",
+      "shortLabel": "Digital",
+      "layer": "technology",
+      "start": 1947,
+      "end": 2026,
+      "color": "#4ecdc4",
+      "blurb": "From the transistor to personal computing, networks, and the web.",
+      "featured": true
+    },
+    {
+      "id": "information-age",
+      "label": "Information Age",
+      "shortLabel": "Information",
+      "layer": "technology",
+      "start": 1970,
+      "end": 2026,
+      "color": "#5ec4d4",
+      "blurb": "Microprocessors, software, and global digital networks become infrastructure.",
+      "featured": true
+    },
+    {
+      "id": "fourth-industrial",
+      "label": "Fourth Industrial Revolution",
+      "shortLabel": "4IR",
+      "layer": "technology",
+      "start": 2010,
+      "end": 2026,
+      "color": "#88d4e8",
+      "blurb": "Cyber-physical systems, ubiquitous sensing, and machine learning enter industry and daily life.",
+      "featured": false
+    },
+    {
+      "id": "ai-era",
+      "label": "AI Era",
+      "shortLabel": "AI Era",
+      "layer": "technology",
+      "start": 2012,
+      "end": 2026,
+      "color": "#e8f4ff",
+      "blurb": "Deep learning and large models make general-purpose machine intelligence a practical technology.",
+      "featured": true
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "categories": [
+    { "id": "survival", "label": "Survival", "color": "#c4a574" },
+    { "id": "agriculture", "label": "Agriculture", "color": "#7d9b6a" },
+    { "id": "materials", "label": "Materials", "color": "#c9843a" },
+    { "id": "construction", "label": "Construction", "color": "#a09078" },
+    { "id": "transportation", "label": "Transportation", "color": "#6b8cae" },
+    { "id": "communication", "label": "Communication", "color": "#d4b06a" },
+    { "id": "energy", "label": "Energy", "color": "#d4a017" },
+    { "id": "science", "label": "Science", "color": "#8b6b9e" },
+    { "id": "medicine", "label": "Medicine", "color": "#c46b7a" },
+    { "id": "computing", "label": "Computing", "color": "#4ecdc4" }
+  ]
+}
