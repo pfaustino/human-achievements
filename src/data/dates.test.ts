@@ -96,10 +96,11 @@ describe('Playback', () => {
   const events = loadInventions().filter((item) => item.tier <= 2).slice(0, 12)
   const eras = loadEras()
 
-  it('gives every tier a dwell so autoplay cannot skip events', () => {
-    expect(dwellMs(fakeInvention('t1', 1, 'One', 1))).toBe(1700)
-    expect(dwellMs(fakeInvention('t2', 1, 'Two', 2))).toBe(1100)
-    expect(dwellMs(fakeInvention('t3', 1, 'Three', 3))).toBe(700)
+  it('uses one hold duration for every slide', () => {
+    const playback = new Playback()
+    playback.setHoldSeconds(0.5)
+    expect(playback.dwellMs()).toBe(500)
+    expect(dwellMs(0.5)).toBe(500)
   })
 
   it('emits the first featured invention while playing forward', () => {

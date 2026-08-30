@@ -1,4 +1,5 @@
 import { catalogSource } from '../data/catalog.ts'
+import { clampHoldSeconds } from '../timeline/Playback.ts'
 import { formatClock, isUncertain } from '../data/dates.ts'
 import type { Category, Era, Invention } from '../data/types.ts'
 
@@ -15,6 +16,7 @@ export type HudHandlers = {
   onRegion: (region: string) => void
   onSearchSelect: (event: Invention) => void
   onSkipIntro: () => void
+  onHoldChange: (seconds: number) => void
 }
 
 export class Hud {
@@ -27,6 +29,7 @@ export class Hud {
   private readonly eraEl: HTMLElement
   private readonly scrubber: HTMLInputElement
   private readonly playBtn: HTMLButtonElement
+  private readonly holdInput: HTMLInputElement
   private readonly searchInput: HTMLInputElement
   private readonly searchResults: HTMLElement
   private readonly eraBanner: HTMLElement
@@ -68,6 +71,10 @@ export class Hud {
               <button type="button" id="play-toggle" title="Space" aria-keyshortcuts="Space">Play</button>
               <button type="button" id="dir-forward" class="active" title="Play forward, or step ahead when paused">Forward ▶</button>
             </div>
+            <label class="hold-control" for="hold-seconds">Hold
+              <input id="hold-seconds" type="number" min="0.1" max="10" step="0.1" value="0.4" />
+              <span>s</span>
+            </label>
             <label class="search-label" for="search">Search</label>
             <input id="search" type="search" placeholder="Printing press, Gutenberg, Bronze Age…" autocomplete="off" />
             <div id="search-results" class="search-results" hidden></div>
@@ -138,6 +145,7 @@ export class Hud {
     this.eraEl = root.querySelector('#now-era') as HTMLElement
     this.scrubber = root.querySelector('#scrubber') as HTMLInputElement
     this.playBtn = root.querySelector('#play-toggle') as HTMLButtonElement
+    this.holdInput = root.querySelector('#hold-seconds') as HTMLInputElement
     this.searchInput = root.querySelector('#search') as HTMLInputElement
     this.searchResults = root.querySelector('#search-results') as HTMLElement
     this.eraBanner = root.querySelector('#era-banner') as HTMLElement
@@ -148,6 +156,16 @@ export class Hud {
       button.addEventListener('click', () => this.togglePanel(button))
     })
     this.playBtn.addEventListener('click', () => handlers.onPlayToggle())
+    this.holdInput.addEventListener('input', () => {
+      const seconds = Number(this.holdInput.value)
+      if (!Number.isFinite(seconds)) return
+      handlers.onHoldChange(seconds)
+    })
+    this.holdInput.addEventListener('change', () => {
+      const seconds = clampHoldSeconds(Number(this.holdInput.value))
+      handlers.onHoldChange(seconds)
+      this.setHoldSeconds(seconds)
+    })
     root.querySelector('#dir-reverse')?.addEventListener('click', () => handlers.onDirection(-1))
     root.querySelector('#dir-forward')?.addEventListener('click', () => handlers.onDirection(1))
     root.querySelector('#intro-play')?.addEventListener('click', () => {
@@ -226,6 +244,11 @@ export class Hud {
 
   setPlaying(playing: boolean): void {
     this.playBtn.textContent = playing ? 'Pause' : 'Play'
+  }
+
+  setHoldSeconds(seconds: number): void {
+    const display = String(seconds)
+    if (this.holdInput.value !== display) this.holdInput.value = display
   }
 
   setDirection(direction: 1 | -1): void {
@@ -453,7 +476,7 @@ function isEditableTarget(target: EventTarget | null): boolean {
   if (tag === 'TEXTAREA' || tag === 'SELECT') return true
   if (tag !== 'INPUT') return false
   const type = (target as HTMLInputElement).type
-  return type === 'text' || type === 'search' || type === 'checkbox' || type === 'range'
+  return type === 'text' || type === 'search' || type === 'number' || type === 'checkbox' || type === 'range'
 }
 
 function escapeHtml(value: string): string {

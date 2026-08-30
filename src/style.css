@@ -171,6 +171,33 @@ body {
   margin-bottom: 8px;
 }
 
+.hold-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.hold-control input {
+  width: 4.4em;
+  appearance: textfield;
+  border: 1px solid #3a4658;
+  background: #141b26;
+  color: #e8e4d9;
+  padding: 4px 6px;
+  font: inherit;
+  font-size: 13px;
+}
+
+.hold-control input::-webkit-outer-spin-button,
+.hold-control input::-webkit-inner-spin-button {
+  opacity: 1;
+}
+
 button,
 input[type="search"] {
   appearance: none;

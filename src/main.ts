@@ -9,11 +9,30 @@ import {
 } from './data/catalog.ts'
 import { formatClock } from './data/dates.ts'
 import type { Era, Invention } from './data/types.ts'
-import { Playback } from './timeline/Playback.ts'
+import { HOLD_SECONDS_DEFAULT, Playback, clampHoldSeconds } from './timeline/Playback.ts'
 import { TimelineView } from './timeline/TimelineView.ts'
 import { Hud, type HudHandlers } from './ui/Hud.ts'
 
 const PLAY_MS = 92_000
+const HOLD_STORAGE_KEY = 'human-achievements-hold-seconds'
+
+function loadHoldSeconds(): number {
+  try {
+    const raw = localStorage.getItem(HOLD_STORAGE_KEY)
+    if (raw == null) return HOLD_SECONDS_DEFAULT
+    return clampHoldSeconds(Number(raw))
+  } catch {
+    return HOLD_SECONDS_DEFAULT
+  }
+}
+
+function saveHoldSeconds(seconds: number): void {
+  try {
+    localStorage.setItem(HOLD_STORAGE_KEY, String(seconds))
+  } catch {
+    // Private mode or blocked storage should not stop playback.
+  }
+}
 
 const stage = document.querySelector<HTMLElement>('#stage')
 const hudRoot = document.querySelector<HTMLElement>('#hud')
@@ -101,6 +120,10 @@ const handlers: HudHandlers = {
     applyCatalog()
   },
   onSearchSelect: (event) => focusEvent(event, true),
+  onHoldChange: (seconds) => {
+    playback.setHoldSeconds(seconds)
+    saveHoldSeconds(playback.holdSeconds)
+  },
   onSkipIntro: () => {
     followPlayhead = false
     timeline.setRevealOnly(false)
@@ -110,6 +133,8 @@ const handlers: HudHandlers = {
 }
 
 const hud = new Hud(hudRoot, handlers)
+playback.setHoldSeconds(loadHoldSeconds())
+hud.setHoldSeconds(playback.holdSeconds)
 
 function applyCatalog(): void {
   const filtered = allInventions.filter((item) => matchesFilters(item, filters))

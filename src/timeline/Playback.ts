@@ -3,10 +3,17 @@ import { axisToYear, yearToAxis } from '../data/scale.ts'
 
 export type Direction = 1 | -1
 
-export function dwellMs(event: Invention): number {
-  if (event.tier === 1) return 1700
-  if (event.tier === 2) return 1100
-  return 700
+export const HOLD_SECONDS_MIN = 0.1
+export const HOLD_SECONDS_MAX = 10
+export const HOLD_SECONDS_DEFAULT = 0.4
+
+export function clampHoldSeconds(seconds: number): number {
+  if (!Number.isFinite(seconds)) return HOLD_SECONDS_DEFAULT
+  return Math.min(HOLD_SECONDS_MAX, Math.max(HOLD_SECONDS_MIN, seconds))
+}
+
+export function dwellMs(holdSeconds: number): number {
+  return clampHoldSeconds(holdSeconds) * 1000
 }
 
 export class Playback {
@@ -17,6 +24,7 @@ export class Playback {
   playing = false
   direction: Direction = 1
   speed = 1
+  holdSeconds = HOLD_SECONDS_DEFAULT
   playDurationMs = 90_000
   sourceStart = 0
   sourceEnd = 1
@@ -94,6 +102,15 @@ export class Playback {
     if (this.direction === direction) return
     this.direction = direction
     this.syncCursorFromFocused()
+  }
+
+  setHoldSeconds(seconds: number): void {
+    this.holdSeconds = clampHoldSeconds(seconds)
+    if (this.focusing) this.focusRemain = this.dwellMs()
+  }
+
+  dwellMs(): number {
+    return dwellMs(this.holdSeconds)
   }
 
   selectEvent(event: Invention): void {
@@ -181,7 +198,7 @@ export class Playback {
     const index = this.events.findIndex((item) => item.id === event.id)
     this.cursor = index + this.direction
     if (autoDwell) {
-      const dwell = dwellMs(event) / Math.min(1.6, Math.max(0.7, this.speed))
+      const dwell = this.dwellMs()
       this.focusRemain = dwell
       this.focusing = dwell > 0
     } else {
