@@ -22,6 +22,12 @@ const LANE_ORDER = [
 
 const LANE_H = 24
 const LANE_BAND = LANE_ORDER.length * LANE_H
+const ERA_BAND_H = 16
+const ERA_BAND_GAP = 3
+const ERA_LAYERS = 3
+const ERA_BLOCK = ERA_LAYERS * ERA_BAND_H + (ERA_LAYERS - 1) * ERA_BAND_GAP
+const TICK_LABEL_H = 26
+const HUD_FALLBACK = 196
 
 export class TimelineView {
   readonly canvas: HTMLCanvasElement
@@ -224,7 +230,13 @@ export class TimelineView {
   }
 
   private pad() {
-    return { left: 88, right: 28, top: 72, bottom: 42 }
+    const height = Math.max(1, Math.floor(this.canvas.clientHeight))
+    const hud = document.querySelector('.hud-bottom')
+    const hudTop = hud instanceof HTMLElement ? hud.getBoundingClientRect().top : height - HUD_FALLBACK
+    const hudReserve = Math.max(120, Math.round(height - hudTop))
+    const bottom = hudReserve + TICK_LABEL_H
+    const top = Math.max(ERA_BLOCK + 12, height - bottom - LANE_BAND)
+    return { left: 88, right: 28, top, bottom }
   }
 
   draw(): void {
@@ -258,10 +270,11 @@ export class TimelineView {
   ): void {
     const ctx = this.ctx
     const layers: Era['layer'][] = ['historical', 'archaeological', 'technology']
-    const bandH = 16
-    const gap = 3
+    const bandH = ERA_BAND_H
+    const gap = ERA_BAND_GAP
+    const eraY0 = pad.top - 8 - ERA_BLOCK
     layers.forEach((layer, index) => {
-      const y = 16 + index * (bandH + gap)
+      const y = eraY0 + index * (bandH + gap)
       for (const era of this.eras) {
         if (era.layer !== layer) continue
         const x0 = this.axisToX(yearToAxis(era.start), width, pad.left, pad.right)
