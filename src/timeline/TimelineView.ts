@@ -20,6 +20,9 @@ const LANE_ORDER = [
   'computing',
 ]
 
+const LANE_H = 24
+const LANE_BAND = LANE_ORDER.length * LANE_H
+
 export class TimelineView {
   readonly canvas: HTMLCanvasElement
   private readonly ctx: CanvasRenderingContext2D
@@ -290,6 +293,7 @@ export class TimelineView {
     const start = axisToYear(this.viewAxis0)
     const end = axisToYear(this.viewAxis1)
     const ticks = niceTicks(start, end, 9)
+    const bandBottom = pad.top + LANE_BAND
     ctx.strokeStyle = 'rgba(232, 228, 217, 0.08)'
     ctx.lineWidth = 1
     ctx.font = '11px "Segoe UI", system-ui, sans-serif'
@@ -301,11 +305,12 @@ export class TimelineView {
       if (x < pad.left || x > width - pad.right) continue
       ctx.beginPath()
       ctx.moveTo(x, pad.top - 8)
-      ctx.lineTo(x, height - pad.bottom + 8)
+      ctx.lineTo(x, bandBottom + 8)
       ctx.stroke()
-      ctx.fillText(formatClock(year), x, height - pad.bottom + 14)
+      ctx.fillText(formatClock(year), x, bandBottom + 14)
     }
     ctx.textAlign = 'left'
+    void height
   }
 
   private drawLanes(
@@ -314,11 +319,10 @@ export class TimelineView {
     pad: { left: number; right: number; top: number; bottom: number },
   ): void {
     const ctx = this.ctx
-    const innerH = height - pad.top - pad.bottom
     ctx.font = '11px "Segoe UI", system-ui, sans-serif'
     ctx.textBaseline = 'middle'
     LANE_ORDER.forEach((id, index) => {
-      const y = pad.top + ((index + 0.5) / LANE_ORDER.length) * innerH
+      const y = laneY(index, pad.top)
       const cat = this.categories.find((item) => item.id === id)
       const active = this.filterCategory === 'all' || this.filterCategory === id
       ctx.fillStyle = active ? 'rgba(232, 228, 217, 0.4)' : 'rgba(232, 228, 217, 0.15)'
@@ -331,6 +335,7 @@ export class TimelineView {
       ctx.stroke()
     })
     ctx.textAlign = 'left'
+    void height
   }
 
   private drawEvents(
@@ -339,7 +344,6 @@ export class TimelineView {
     pad: { left: number; right: number; top: number; bottom: number },
   ): void {
     const ctx = this.ctx
-    const innerH = height - pad.top - pad.bottom
     const zoom = 1 / (this.viewAxis1 - this.viewAxis0)
     this.laid = []
     const labels: { x: number; y: number; text: string; color: string }[] = []
@@ -351,7 +355,7 @@ export class TimelineView {
       const dim = this.filterCategory !== 'all' && !event.categories.includes(this.filterCategory)
       const lane = LANE_ORDER.indexOf(event.categories[0] ?? 'survival')
       const x = this.axisToX(axis, width, pad.left, pad.right)
-      const y = pad.top + ((Math.max(0, lane) + 0.5) / LANE_ORDER.length) * innerH
+      const y = laneY(Math.max(0, lane), pad.top)
       const r = event.tier === 1 ? 8.5 : event.tier === 2 ? 6 : 4.2
       const cat = this.categories.find((item) => item.id === event.categories[0])
       const color = cat?.color ?? '#d4b06a'
@@ -387,6 +391,7 @@ export class TimelineView {
       ctx.fillText(label.text, label.x, label.y)
       used.push(label)
     }
+    void height
   }
 
   private drawPlayhead(
@@ -396,12 +401,13 @@ export class TimelineView {
   ): void {
     const x = this.axisToX(yearToAxis(this.playhead), width, pad.left, pad.right)
     if (x < pad.left || x > width - pad.right) return
+    const bandBottom = pad.top + LANE_BAND
     const ctx = this.ctx
     ctx.strokeStyle = 'rgba(126, 200, 196, 0.85)'
     ctx.lineWidth = 1.5
     ctx.beginPath()
     ctx.moveTo(x, pad.top - 10)
-    ctx.lineTo(x, height - pad.bottom + 6)
+    ctx.lineTo(x, bandBottom + 6)
     ctx.stroke()
     ctx.fillStyle = '#7ec8c4'
     ctx.beginPath()
@@ -410,6 +416,7 @@ export class TimelineView {
     ctx.lineTo(x + 5, pad.top - 22)
     ctx.closePath()
     ctx.fill()
+    void height
   }
 
   private hit(x: number, y: number) {
@@ -424,6 +431,10 @@ export class TimelineView {
     }
     return best
   }
+}
+
+function laneY(index: number, padTop: number): number {
+  return padTop + (index + 0.5) * LANE_H
 }
 
 function pinch(touches: TouchList): number {

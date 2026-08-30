@@ -131,7 +131,7 @@ body {
 }
 
 .card {
-  max-height: min(80vh, 760px);
+  max-height: min(88vh, 900px);
   overflow: auto;
 }
 
@@ -226,7 +226,7 @@ button.ghost {
 
 .card {
   min-width: 260px;
-  max-width: 420px;
+  max-width: 580px;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
@@ -483,6 +483,11 @@ dd {
   .panel {
     max-width: none;
     width: 100%;
+  }
+
+  .card {
+    max-width: none;
+    max-height: min(52vh, 520px);
   }
 
   .intro {
