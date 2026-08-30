@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { formatClock, formatYear, inferPrecision, kyaToYear, myaToYear } from './dates.ts'
 import { axisToYear, yearToAxis } from './scale.ts'
-import { loadInventions } from './catalog.ts'
+import { loadEras, loadInventions } from './catalog.ts'
+import type { Invention } from './types.ts'
 import { Playback } from '../timeline/Playback.ts'
-import { loadEras } from './catalog.ts'
 
 describe('formatYear', () => {
   it('formats BCE and CE without a year zero', () => {
@@ -128,4 +128,60 @@ describe('Playback', () => {
     const back = playback.step(-1)
     expect(back?.id).toBe(events[0].id)
   })
+
+  it('steps through every same-year invention without skipping', () => {
+    const sameYear = [
+      fakeInvention('same-a', 1876, 'Alpha', 3),
+      fakeInvention('same-b', 1876, 'Bravo', 2),
+      fakeInvention('same-c', 1876, 'Charlie', 1),
+    ]
+    const playback = new Playback()
+    playback.setEvents(sameYear, [], 12_000)
+    expect(playback.step(1)?.id).toBe('same-a')
+    expect(playback.step(1)?.id).toBe('same-b')
+    expect(playback.step(1)?.id).toBe('same-c')
+    expect(playback.step(-1)?.id).toBe('same-b')
+    expect(playback.step(-1)?.id).toBe('same-a')
+    playback.selectEvent(sameYear[0])
+    expect(playback.focused?.id).toBe('same-a')
+    expect(playback.step(1)?.id).toBe('same-b')
+  })
+
+  it('steps from Acheulean to origin of language, not Bone tools', () => {
+    const all = loadInventions()
+    const playback = new Playback()
+    playback.setEvents(all, loadEras(), 12_000)
+    const acheulean = all.find((item) => item.title === 'Acheulean')
+    expect(acheulean).toBeTruthy()
+    const index = all.findIndex((item) => item.id === acheulean?.id)
+    const after = all.slice(index + 1, index + 6)
+    expect(after.map((item) => item.title)).toEqual([
+      'origin of language',
+      'Bone tool',
+      'Control of fire',
+      'Cooking',
+      'Rafts',
+    ])
+    playback.selectEvent(acheulean!)
+    const next = playback.step(1)
+    expect(next?.title).toMatch(/language/i)
+    expect(next?.title).not.toBe('Bone tool')
+    expect(playback.step(1)?.title).toBe('Bone tool')
+    expect(playback.step(-1)?.title).toMatch(/language/i)
+  })
 })
+
+function fakeInvention(id: string, year: number, title: string, tier: 1 | 2 | 3): Invention {
+  return {
+    id,
+    title,
+    dateStart: year,
+    dateDisplay: String(year),
+    datePrecision: 'year',
+    description: title,
+    categories: [],
+    sources: [],
+    tier,
+    section: String(year),
+  }
+}

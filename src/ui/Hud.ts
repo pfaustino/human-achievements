@@ -39,6 +39,7 @@ export class Hud {
   private seeking = false
   private inventions: Invention[] = []
   private wikiImageRequest = 0
+  private wikiZoomEl: HTMLElement | null = null
 
   constructor(root: HTMLElement, handlers: HudHandlers) {
     const source = catalogSource()
@@ -301,6 +302,7 @@ export class Hud {
   }
 
   showEvent(event: Invention): void {
+    this.hideWikiZoom()
     const requestId = ++this.wikiImageRequest
     this.cardTitleEl.textContent = event.title
     this.cardPanel.classList.add('live')
@@ -339,10 +341,29 @@ export class Hud {
   }
 
   clearEvent(): void {
+    this.hideWikiZoom()
     this.wikiImageRequest += 1
     this.cardTitleEl.textContent = 'Invention'
     this.cardPanel.classList.remove('live')
     this.cardEl.innerHTML = `<p class="muted">Click a milestone, or play through history.</p>`
+  }
+
+  private showWikiZoom(src: string, alt: string): void {
+    this.hideWikiZoom()
+    const overlay = document.createElement('div')
+    overlay.className = 'wiki-image-zoom'
+    overlay.setAttribute('aria-hidden', 'true')
+    const zoomImg = document.createElement('img')
+    zoomImg.src = src
+    zoomImg.alt = alt
+    overlay.appendChild(zoomImg)
+    document.body.appendChild(overlay)
+    this.wikiZoomEl = overlay
+  }
+
+  private hideWikiZoom(): void {
+    this.wikiZoomEl?.remove()
+    this.wikiZoomEl = null
   }
 
   private async loadWikiImage(event: Invention, requestId: number): Promise<void> {
@@ -360,7 +381,12 @@ export class Hud {
       img.className = 'card-wiki-image'
       img.src = src
       img.alt = event.title
-      img.addEventListener('error', () => img.remove())
+      img.addEventListener('error', () => {
+        this.hideWikiZoom()
+        img.remove()
+      })
+      img.addEventListener('mouseenter', () => this.showWikiZoom(src, event.title))
+      img.addEventListener('mouseleave', () => this.hideWikiZoom())
       this.cardEl.prepend(img)
     } catch {
       // Missing or blocked Wikipedia image should not break the card.
@@ -422,6 +448,7 @@ export class Hud {
       return
     }
     if (event.code === 'ArrowLeft' || event.code === 'ArrowRight') {
+      if (event.repeat) return
       event.preventDefault()
       handlers.onStep(event.code === 'ArrowLeft' ? -1 : 1)
     }
@@ -464,7 +491,7 @@ function isEditableTarget(target: EventTarget | null): boolean {
   if (tag === 'TEXTAREA' || tag === 'SELECT') return true
   if (tag !== 'INPUT') return false
   const type = (target as HTMLInputElement).type
-  return type === 'text' || type === 'search' || type === 'checkbox'
+  return type === 'text' || type === 'search' || type === 'checkbox' || type === 'range'
 }
 
 function escapeHtml(value: string): string {

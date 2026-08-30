@@ -160,7 +160,7 @@ function jumpTo(year: number): void {
 }
 
 function focusEvent(event: Invention, zoom: boolean): void {
-  playback.seekYear(event.dateStart)
+  playback.selectEvent(event)
   playback.playing = false
   followPlayhead = false
   timeline.setRevealOnly(false)

@@ -11,7 +11,6 @@ export function dwellMs(event: Invention): number {
 export class Playback {
   events: Invention[] = []
   featured: Invention[] = []
-  stepPool: Invention[] = []
   eras: Era[] = []
   playhead = 0
   playing = false
@@ -35,7 +34,6 @@ export class Playback {
       seen.add(event.title)
       return true
     })
-    this.stepPool = events.filter((event) => event.tier <= 2)
     this.eras = eras.filter((era) => era.featured)
     this.playDurationMs = playDurationMs
     this.focusing = false
@@ -97,13 +95,18 @@ export class Playback {
     this.syncCursorFromFocused()
   }
 
+  selectEvent(event: Invention): void {
+    this.focusEvent(event, false)
+  }
+
   step(direction: Direction): Invention | null {
-    const list = this.stepPool.length ? this.stepPool : this.events
+    const list = this.events
     if (list.length === 0) return null
-    const current = this.focused ?? this.lastAtOrBefore(this.playhead)
+    const current = this.focused
     let index = current ? list.findIndex((event) => event.id === current.id) : -1
     if (index < 0) {
       index = list.findIndex((event) => event.dateStart >= this.playhead)
+      if (index < 0) index = list.length
       if (direction === -1) index -= 1
     } else {
       index += direction
