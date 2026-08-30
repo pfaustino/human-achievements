@@ -4,7 +4,6 @@ import type { Category, Era, Invention } from '../data/types.ts'
 
 export type TimelineHandlers = {
   onSelect: (event: Invention | null) => void
-  onViewChange: (yearStart: number, yearEnd: number) => void
 }
 
 const LANE_ORDER = [
@@ -27,7 +26,7 @@ const ERA_BAND_GAP = 3
 const ERA_LAYERS = 3
 const ERA_BLOCK = ERA_LAYERS * ERA_BAND_H + (ERA_LAYERS - 1) * ERA_BAND_GAP
 const TICK_LABEL_H = 26
-const HUD_FALLBACK = 196
+const BOTTOM_PAD = 18
 
 export class TimelineView {
   readonly canvas: HTMLCanvasElement
@@ -46,7 +45,6 @@ export class TimelineView {
   private dragging = false
   private moved = false
   private dragLastX = 0
-  private pinchDist = 0
   private laid: { event: Invention; x: number; y: number; r: number }[] = []
   private readonly observer: ResizeObserver
   private eraPulse = 0
@@ -56,7 +54,7 @@ export class TimelineView {
     this.handlers = handlers
     this.canvas = document.createElement('canvas')
     this.canvas.className = 'timeline-canvas'
-    this.canvas.setAttribute('aria-label', 'Zoomable invention timeline')
+    this.canvas.setAttribute('aria-label', 'Invention timeline')
     container.appendChild(this.canvas)
     const ctx = this.canvas.getContext('2d', { alpha: false })
     if (!ctx) throw new Error('Could not create timeline canvas')
@@ -102,42 +100,22 @@ export class TimelineView {
     return { start: axisToYear(this.viewAxis0), end: axisToYear(this.viewAxis1) }
   }
 
-  zoomToYears(start: number, end: number, pad = 0.04): void {
-    const a0 = yearToAxis(start)
-    const a1 = yearToAxis(end)
-    const span = Math.max(0.008, a1 - a0)
-    const extra = span * pad
-    this.viewAxis0 = Math.max(0, a0 - extra)
-    this.viewAxis1 = Math.min(1, a1 + extra)
-    this.emitView()
-    this.draw()
+  zoomToYears(_start: number, _end: number, _pad = 0.04): void {
+    this.resetView()
   }
 
   resetView(): void {
     this.viewAxis0 = 0
     this.viewAxis1 = 1
-    this.emitView()
     this.draw()
   }
 
   followPlayhead(): void {
-    const axis = yearToAxis(this.playhead)
-    const span = this.viewAxis1 - this.viewAxis0
-    const target = Math.min(1 - span, Math.max(0, axis - span * 0.72))
-    this.viewAxis0 = target
-    this.viewAxis1 = target + span
-    this.draw()
+    this.resetView()
   }
 
-  zoomAt(screenX: number, factor: number): void {
-    const t = this.xToAxis(screenX)
-    const span = (this.viewAxis1 - this.viewAxis0) * factor
-    const minSpan = 0.004
-    const next = Math.min(1, Math.max(minSpan, span))
-    this.viewAxis0 = Math.min(1 - next, Math.max(0, t - (t - this.viewAxis0) * (next / (this.viewAxis1 - this.viewAxis0 || 1))))
-    this.viewAxis1 = this.viewAxis0 + next
-    this.emitView()
-    this.draw()
+  zoomAt(_screenX: number, _factor: number): void {
+    this.resetView()
   }
 
   tick(dt: number): void {
@@ -150,8 +128,6 @@ export class TimelineView {
   private bind(): void {
     this.canvas.addEventListener('wheel', (event) => {
       event.preventDefault()
-      const factor = event.deltaY > 0 ? 1.12 : 0.88
-      this.zoomAt(event.offsetX, factor)
     }, { passive: false })
 
     this.canvas.addEventListener('pointerdown', (event) => {
@@ -165,22 +141,14 @@ export class TimelineView {
       const x = event.clientX - rect.left
       const y = event.clientY - rect.top
       if (this.dragging) {
-        const dx = event.clientX - this.dragLastX
-        this.dragLastX = event.clientX
-        if (Math.abs(dx) > 2) this.moved = true
-        const span = this.viewAxis1 - this.viewAxis0
-        const shift = (-dx / Math.max(1, this.canvas.clientWidth)) * span
-        this.viewAxis0 = Math.min(1 - span, Math.max(0, this.viewAxis0 + shift))
-        this.viewAxis1 = this.viewAxis0 + span
-        this.emitView()
-        this.draw()
+        if (Math.abs(event.clientX - this.dragLastX) > 2) this.moved = true
         return
       }
       const hit = this.hit(x, y)
       const next = hit?.event.id ?? null
       if (next !== this.hoverId) {
         this.hoverId = next
-        this.canvas.style.cursor = next ? 'pointer' : 'grab'
+        this.canvas.style.cursor = next ? 'pointer' : 'default'
         this.draw()
       }
     })
@@ -197,31 +165,9 @@ export class TimelineView {
       this.hoverId = null
       this.draw()
     })
-    this.canvas.addEventListener('touchstart', (event) => {
-      if (event.touches.length === 2) {
-        this.pinchDist = pinch(event.touches)
-      }
-    }, { passive: true })
     this.canvas.addEventListener('touchmove', (event) => {
-      if (event.touches.length === 2) {
-        event.preventDefault()
-        const next = pinch(event.touches)
-        const mid = (event.touches[0].clientX + event.touches[1].clientX) / 2
-        const rect = this.canvas.getBoundingClientRect()
-        if (this.pinchDist > 0) this.zoomAt(mid - rect.left, this.pinchDist / next)
-        this.pinchDist = next
-      }
+      if (event.touches.length === 2) event.preventDefault()
     }, { passive: false })
-  }
-
-  private emitView(): void {
-    this.handlers.onViewChange(axisToYear(this.viewAxis0), axisToYear(this.viewAxis1))
-  }
-
-  private xToAxis(x: number): number {
-    const pad = this.pad()
-    const t = (x - pad.left) / Math.max(1, this.canvas.clientWidth - pad.left - pad.right)
-    return this.viewAxis0 + Math.min(1, Math.max(0, t)) * (this.viewAxis1 - this.viewAxis0)
   }
 
   private axisToX(axis: number, width: number, padLeft: number, padRight: number): number {
@@ -231,10 +177,7 @@ export class TimelineView {
 
   private pad() {
     const height = Math.max(1, Math.floor(this.canvas.clientHeight))
-    const hud = document.querySelector('.hud-bottom')
-    const hudTop = hud instanceof HTMLElement ? hud.getBoundingClientRect().top : height - HUD_FALLBACK
-    const hudReserve = Math.max(120, Math.round(height - hudTop))
-    const bottom = hudReserve + TICK_LABEL_H
+    const bottom = BOTTOM_PAD + TICK_LABEL_H
     const top = Math.max(ERA_BLOCK + 12, height - bottom - LANE_BAND)
     return { left: 88, right: 28, top, bottom }
   }
@@ -448,10 +391,6 @@ export class TimelineView {
 
 function laneY(index: number, padTop: number): number {
   return padTop + (index + 0.5) * LANE_H
-}
-
-function pinch(touches: TouchList): number {
-  return Math.hypot(touches[0].clientX - touches[1].clientX, touches[0].clientY - touches[1].clientY)
 }
 
 function hexAlpha(hex: string, alpha: number): string {

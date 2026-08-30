@@ -8,8 +8,6 @@ export type HudHandlers = {
   onPlayHistory: () => void
   onDirection: (direction: 1 | -1) => void
   onStep: (direction: -1 | 1) => void
-  onSeek: (fraction: number) => void
-  onEra: (era: Era) => void
   onCategory: (id: string) => void
   onHistorical: (label: string) => void
   onTechnology: (label: string) => void
@@ -21,13 +19,10 @@ export type HudHandlers = {
 
 export class Hud {
   private readonly clockEl: HTMLElement
-  private readonly statusEl: HTMLElement
   private readonly cardEl: HTMLElement
   private readonly cardTitleEl: HTMLElement
   private readonly cardPanel: HTMLElement
-  private readonly eventsEl: HTMLElement
   private readonly eraEl: HTMLElement
-  private readonly scrubber: HTMLInputElement
   private readonly playBtn: HTMLButtonElement
   private readonly holdInput: HTMLInputElement
   private readonly searchInput: HTMLInputElement
@@ -35,7 +30,6 @@ export class Hud {
   private readonly eraBanner: HTMLElement
   private readonly introEl: HTMLElement
   private readonly hintEl: HTMLElement
-  private seeking = false
   private inventions: Invention[] = []
   private wikiImageRequest = 0
   private wikiZoomEl: HTMLElement | null = null
@@ -47,7 +41,7 @@ export class Hud {
         <p class="intro-kicker">Human Achievements</p>
         <h1>The History of Human Invention</h1>
         <p class="intro-sub">3.3 million years of human ingenuity</p>
-        <p class="intro-hint">Scroll to travel through history. Zoom to explore. Click an invention to discover its story.</p>
+        <p class="intro-hint">Play through history, or click an invention to discover its story.</p>
         <div class="intro-actions">
           <button type="button" id="intro-play">Play through history</button>
           <button type="button" id="intro-skip" class="ghost">Skip</button>
@@ -75,10 +69,14 @@ export class Hud {
               <input id="hold-seconds" type="number" min="0.1" max="10" step="0.1" value="0.4" />
               <span>s</span>
             </label>
+            <div class="clock-compact">
+              <div id="clock">—</div>
+              <div class="now-era" id="now-era">Looking across 3.3 million years</div>
+            </div>
             <label class="search-label" for="search">Search</label>
             <input id="search" type="search" placeholder="Printing press, Gutenberg, Bronze Age…" autocomplete="off" />
             <div id="search-results" class="search-results" hidden></div>
-            <p class="note keys">Space play/pause. ← → step. Scroll zoom. Drag to pan.</p>
+            <p class="note keys">Space play/pause. ← → step.</p>
             <div class="filter-block">
               <p class="filter-label">Category</p>
               <div class="row wrap" id="category-filters" role="group" aria-label="Category"></div>
@@ -98,6 +96,7 @@ export class Hud {
                 <div class="row wrap" id="region-filters" role="group" aria-label="Geography"></div>
               </div>
             </details>
+            <p class="attr">Dataset based on Wikipedia’s <a href="${source.url}" target="_blank" rel="noreferrer">${source.title}</a> (${source.license}). Dates are often archaeological estimates. Retrieved ${source.retrieved}.</p>
           </div>
         </section>
         <section class="panel card" id="details-card">
@@ -110,40 +109,14 @@ export class Hud {
           </div>
         </section>
       </div>
-      <div class="hud-bottom">
-        <div class="panel timeline">
-          <header class="panel-head">
-            <div>
-              <div id="clock">—</div>
-              <div class="now-era" id="now-era">Looking across 3.3 million years</div>
-            </div>
-            <button type="button" class="panel-toggle" aria-expanded="true">Collapse</button>
-          </header>
-          <div class="panel-body">
-            <div class="clock-row">
-              <div class="stats">
-                <span>Shown <strong id="stat-events">0</strong></span>
-                <span id="view-span"></span>
-              </div>
-            </div>
-            <div class="era-nav" id="era-nav" role="navigation" aria-label="Eras"></div>
-            <input id="scrubber" type="range" min="0" max="1000" value="0" />
-            <p class="status" id="status">Loading catalog…</p>
-            <p class="attr">Dataset based on Wikipedia’s <a href="${source.url}" target="_blank" rel="noreferrer">${source.title}</a> (${source.license}). Dates are often archaeological estimates. Retrieved ${source.retrieved}.</p>
-          </div>
-        </div>
-      </div>
-      <p class="float-hint" id="float-hint">Scroll to travel · Zoom to explore · Click to read</p>
+      <p class="float-hint" id="float-hint">Play through history · Click to read</p>
     `
 
     this.clockEl = root.querySelector('#clock') as HTMLElement
-    this.statusEl = root.querySelector('#status') as HTMLElement
     this.cardEl = root.querySelector('#event-card') as HTMLElement
     this.cardTitleEl = root.querySelector('#card-title') as HTMLElement
     this.cardPanel = root.querySelector('#details-card') as HTMLElement
-    this.eventsEl = root.querySelector('#stat-events') as HTMLElement
     this.eraEl = root.querySelector('#now-era') as HTMLElement
-    this.scrubber = root.querySelector('#scrubber') as HTMLInputElement
     this.playBtn = root.querySelector('#play-toggle') as HTMLButtonElement
     this.holdInput = root.querySelector('#hold-seconds') as HTMLInputElement
     this.searchInput = root.querySelector('#search') as HTMLInputElement
@@ -178,16 +151,6 @@ export class Hud {
     })
     window.addEventListener('keydown', (event) => this.onKeyDown(event, handlers))
 
-    this.scrubber.addEventListener('pointerdown', () => {
-      this.seeking = true
-    })
-    this.scrubber.addEventListener('pointerup', () => {
-      this.seeking = false
-    })
-    this.scrubber.addEventListener('input', () => {
-      handlers.onSeek(Number(this.scrubber.value) / 1000)
-    })
-
     this.searchInput.addEventListener('input', () => this.renderSearch(this.searchInput.value))
     this.searchResults.addEventListener('click', (event) => {
       const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-id]')
@@ -219,20 +182,6 @@ export class Hud {
       (id) => (id === 'all' ? 'All' : id),
       (id) => handlers.onRegion(id),
     )
-
-    const nav = document.querySelector('#era-nav')
-    if (nav) {
-      nav.innerHTML = eras
-        .filter((era) => era.featured)
-        .map((era) => `<button type="button" data-era-id="${era.id}" style="--era:${era.color}">${escapeHtml(era.shortLabel)}</button>`)
-        .join('')
-      nav.querySelectorAll<HTMLButtonElement>('[data-era-id]').forEach((button) => {
-        button.addEventListener('click', () => {
-          const era = eras.find((item) => item.id === button.dataset.eraId)
-          if (era) handlers.onEra(era)
-        })
-      })
-    }
   }
 
   hideIntro(): void {
@@ -256,24 +205,9 @@ export class Hud {
     document.querySelector('#dir-forward')?.classList.toggle('active', direction === 1)
   }
 
-  setStatus(text: string): void {
-    this.statusEl.textContent = text
-  }
-
   setClock(year: number, eraLabel: string): void {
     this.clockEl.textContent = formatClock(year)
     this.eraEl.textContent = eraLabel
-  }
-
-  setFraction(fraction: number): void {
-    if (this.seeking) return
-    this.scrubber.value = String(Math.round(fraction * 1000))
-  }
-
-  setStats(shown: number, viewLabel: string): void {
-    this.eventsEl.textContent = shown.toLocaleString('en-US')
-    const span = document.querySelector('#view-span')
-    if (span) span.textContent = viewLabel
   }
 
   showEra(era: Era): void {
