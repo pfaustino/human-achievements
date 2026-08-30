@@ -1,0 +1,28 @@
+---
+description: After a fix or feature, commit and push without asking
+alwaysApply: true
+---
+
+# Commit and push after completing work
+
+After completing a bug fix or feature in this repo, create a git commit and push to `origin` (usually `main`) without asking.
+
+## Protocol
+
+1. Run `git status`, `git diff`, and `git log` in parallel.
+2. Stage only relevant files. Never commit secrets or `node_modules`.
+3. Write a 1-2 sentence why-focused commit message.
+4. Use a PowerShell here-string for the message:
+
+```powershell
+git commit -m @"
+Message here.
+
+"@
+```
+
+5. Do not use `--no-verify`. Do not force-push to `main`. Do not amend already-pushed commits.
+6. Push so GitHub Pages can redeploy.
+7. Report the commit hash and https://pfaustino.github.io/human-achievements/
+
+Still do not commit if there are no changes.
