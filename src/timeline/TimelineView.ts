@@ -27,6 +27,16 @@ const ERA_LAYERS = 3
 const ERA_BLOCK = ERA_LAYERS * ERA_BAND_H + (ERA_LAYERS - 1) * ERA_BAND_GAP
 const TICK_LABEL_H = 26
 const BOTTOM_PAD = 18
+const ERA_LABEL_MIN_W = 56
+const ERA_LABEL_GAP = 10
+const TICK_LABEL_GAP = 60
+const PARENT_ERA_IDS = new Set([
+  'paleolithic',
+  'neolithic',
+  'bronze-age',
+  'first-industrial',
+  'digital-revolution',
+])
 
 export class TimelineView {
   readonly canvas: HTMLCanvasElement
@@ -218,6 +228,7 @@ export class TimelineView {
     const eraY0 = pad.top - 8 - ERA_BLOCK
     layers.forEach((layer, index) => {
       const y = eraY0 + index * (bandH + gap)
+      const row: { era: Era; left: number; right: number; inside: boolean }[] = []
       for (const era of this.eras) {
         if (era.layer !== layer) continue
         const x0 = this.axisToX(yearToAxis(era.start), width, pad.left, pad.right)
@@ -227,14 +238,31 @@ export class TimelineView {
         const pulse = this.eraPulseId === era.id ? this.eraPulse : 0
         const alpha = (inside ? 0.28 : 0.12) + pulse * 0.28
         ctx.fillStyle = hexAlpha(era.color, alpha)
-        ctx.fillRect(Math.max(pad.left, x0), y, Math.max(2, Math.min(width - pad.right, x1) - Math.max(pad.left, x0)), bandH)
-        const w = x1 - x0
-        if (w > 64) {
-          ctx.fillStyle = hexAlpha('#e8e4d9', inside ? 0.85 : 0.45)
-          ctx.font = `${inside ? 600 : 500} 10px "Segoe UI", system-ui, sans-serif`
-          ctx.textBaseline = 'middle'
-          ctx.fillText(era.shortLabel, Math.max(pad.left, x0) + 6, y + bandH / 2)
-        }
+        const left = Math.max(pad.left, x0)
+        const right = Math.min(width - pad.right, x1)
+        ctx.fillRect(left, y, Math.max(2, right - left), bandH)
+        row.push({ era, left, right, inside })
+      }
+      row.sort((a, b) => {
+        const pa = eraLabelPriority(a.era)
+        const pb = eraLabelPriority(b.era)
+        if (pa !== pb) return pb - pa
+        return a.left - b.left
+      })
+      const occupied: { left: number; right: number }[] = []
+      for (const item of row) {
+        const w = item.right - item.left
+        if (w < ERA_LABEL_MIN_W) continue
+        ctx.font = `${item.inside ? 600 : 500} 10px "Segoe UI", system-ui, sans-serif`
+        ctx.textBaseline = 'middle'
+        const textW = ctx.measureText(item.era.shortLabel).width
+        const lx = item.left + 6
+        const rx = lx + textW
+        if (rx > item.right - 2) continue
+        if (occupied.some((box) => bandsOverlap(item, box, ERA_LABEL_GAP))) continue
+        ctx.fillStyle = hexAlpha('#e8e4d9', item.inside ? 0.85 : 0.45)
+        ctx.fillText(item.era.shortLabel, lx, y + bandH / 2)
+        occupied.push({ left: item.left, right: item.right })
       }
     })
     void height
@@ -256,6 +284,8 @@ export class TimelineView {
     ctx.fillStyle = 'rgba(232, 228, 217, 0.45)'
     ctx.textAlign = 'center'
     ctx.textBaseline = 'top'
+    let lastLabelRight = -Infinity
+    let lastLabel = ''
     for (const year of ticks) {
       const x = this.axisToX(yearToAxis(year), width, pad.left, pad.right)
       if (x < pad.left || x > width - pad.right) continue
@@ -263,7 +293,15 @@ export class TimelineView {
       ctx.moveTo(x, pad.top - 8)
       ctx.lineTo(x, bandBottom + 8)
       ctx.stroke()
-      ctx.fillText(formatClock(year), x, bandBottom + 14)
+      const label = formatClock(year)
+      const textW = ctx.measureText(label).width
+      const labelLeft = x - textW / 2
+      const labelRight = x + textW / 2
+      if (label === lastLabel && labelLeft < lastLabelRight + TICK_LABEL_GAP) continue
+      if (labelLeft < lastLabelRight + TICK_LABEL_GAP) continue
+      ctx.fillText(label, x, bandBottom + 14)
+      lastLabelRight = labelRight
+      lastLabel = label
     }
     ctx.textAlign = 'left'
     void height
@@ -387,6 +425,20 @@ export class TimelineView {
     }
     return best
   }
+}
+
+function eraLabelPriority(era: Era): number {
+  if (PARENT_ERA_IDS.has(era.id)) return 2
+  if (era.featured) return 1
+  return 0
+}
+
+function bandsOverlap(
+  a: { left: number; right: number },
+  b: { left: number; right: number },
+  gap: number,
+): boolean {
+  return Math.min(a.right, b.right) - Math.max(a.left, b.left) > gap
 }
 
 function laneY(index: number, padTop: number): number {

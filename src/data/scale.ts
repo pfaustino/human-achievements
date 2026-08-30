@@ -75,9 +75,21 @@ export function clampYear(year: number): number {
   return Math.min(last, Math.max(first, year))
 }
 
+/** Sparse anchors for the locked full-span view. Mid-Paleolithic years are
+ *  omitted so the start is one "3.3 Mya" label, then 10,000 BCE and later. */
+const FULL_SPAN_TICKS = [-3_300_000, -10_000, -3_300, 1, 1450, 1760, 1900, 2026]
+
 export function niceTicks(viewStart: number, viewEnd: number, target = 8): number[] {
-  const span = Math.max(1, viewEnd - viewStart)
-  const raw = span / Math.max(2, target)
+  const yearSpan = Math.max(1, viewEnd - viewStart)
+  const axisSpan = yearToAxis(viewEnd) - yearToAxis(viewStart)
+  // Full-span (and other wide) views: year-linear steps pile up as identical "3.x Mya"
+  // labels on the compressed left edge and never reach 10,000 BCE / modern ticks.
+  if (yearSpan > 50_000 || axisSpan > 0.35) {
+    const ticks = FULL_SPAN_TICKS.filter((year) => year >= viewStart && year <= viewEnd)
+    if (ticks.length === 0) ticks.push(Math.round((viewStart + viewEnd) / 2))
+    return ticks
+  }
+  const raw = yearSpan / Math.max(2, target)
   const step = niceStep(raw)
   const first = Math.ceil(viewStart / step) * step
   const ticks: number[] = []

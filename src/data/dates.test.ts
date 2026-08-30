@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { formatClock, formatYear, inferPrecision, kyaToYear, myaToYear } from './dates.ts'
-import { axisToYear, yearToAxis } from './scale.ts'
+import { axisToYear, niceTicks, yearToAxis } from './scale.ts'
 import { loadEras, loadInventions } from './catalog.ts'
 import type { Invention } from './types.ts'
 import { Playback, dwellMs } from '../timeline/Playback.ts'
@@ -47,6 +47,18 @@ describe('nonlinear scale', () => {
     const paleo = yearToAxis(-10_000) - yearToAxis(-20_000)
     const industrial = yearToAxis(1900) - yearToAxis(1760)
     expect(industrial).toBeGreaterThan(paleo)
+  })
+
+  it('keeps full-span ticks readable instead of a 3.x Mya cluster', () => {
+    const ticks = niceTicks(-3_300_000, 2026, 9)
+    const mya = ticks.filter((year) => formatClock(year).includes('Mya'))
+    expect(mya.length).toBeLessThanOrEqual(2)
+    expect(ticks[0]).toBe(-3_300_000)
+    expect(ticks).toContain(-10_000)
+    expect(ticks).not.toContain(-300_000)
+    expect(ticks).not.toContain(-40_000)
+    expect(ticks.some((year) => year >= 1400 && year <= 1600)).toBe(true)
+    expect(ticks.some((year) => year >= 1900)).toBe(true)
   })
 })
 
