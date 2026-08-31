@@ -1,5 +1,6 @@
 import './style.css'
-import { Narration, NARRATION_HOLD_PAD } from './audio/Narration.ts'
+import { Narration, NARRATION_HOLD_PAD, isSpeechSupported } from './audio/Narration.ts'
+import { buildNarration } from './ui/narrate.ts'
 import {
   erasAt,
   loadCategories,
@@ -189,19 +190,28 @@ function stepEvent(direction: -1 | 1): void {
 }
 
 function speakDescription(event: Invention, holdPlayback: boolean): void {
-  if (!narration.enabled) {
-    if (holdPlayback) playback.holdForMs(playback.dwellMs())
+  const dwell = playback.dwellMs()
+  if (!narration.enabled || !isSpeechSupported()) {
+    if (holdPlayback) playback.holdForMs(dwell)
+    return
+  }
+  const script = buildNarration(event)
+  if (!script) {
+    if (holdPlayback) playback.holdForMs(dwell)
     return
   }
   const eventId = event.id
-  const estimated = narration.speak(event.description, {
+  const started = performance.now()
+  const estimated = narration.speak(script, {
     onEnd: () => {
       if (!holdPlayback) return
       if (playback.focused?.id !== eventId) return
-      playback.releaseHold()
+      const remain = dwell - (performance.now() - started)
+      if (remain <= 0) playback.releaseHold()
+      else playback.holdForMs(remain)
     },
   })
-  if (holdPlayback) playback.holdForMs(Math.round(estimated * NARRATION_HOLD_PAD))
+  if (holdPlayback) playback.holdForMs(Math.max(dwell, Math.round(estimated * NARRATION_HOLD_PAD)))
 }
 
 function eraCaption(year: number): string {
@@ -228,6 +238,9 @@ function onEra(era: Era): void {
 
 let last = performance.now()
 function frame(now: number): void {
+  if (playback.playing && playback.focusing && narration.speaking() && playback.focusRemain < 120) {
+    playback.holdForMs(200)
+  }
   const dt = Math.min(100, now - last)
   last = now
   const ended = playback.tick(dt, onFocus, onEra)

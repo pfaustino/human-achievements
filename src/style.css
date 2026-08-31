@@ -159,11 +159,15 @@ body {
   margin-bottom: 8px;
 }
 
+.playback-opts {
+  align-items: center;
+}
+
 .hold-control {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  margin: 0 12px 8px 0;
+  margin: 0;
   color: var(--muted);
   font-size: 12px;
   letter-spacing: 0.04em;
@@ -174,7 +178,7 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  margin: 0 0 8px;
+  margin: 0;
   color: var(--muted);
   font-size: 12px;
   letter-spacing: 0.04em;

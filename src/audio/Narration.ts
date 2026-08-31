@@ -73,6 +73,6 @@ export class Narration {
   }
 
   speaking(): boolean {
-    return isSpeechSupported() && window.speechSynthesis.speaking
+    return this.utterance != null && isSpeechSupported() && window.speechSynthesis.speaking
   }
 }

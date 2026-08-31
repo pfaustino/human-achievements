@@ -67,14 +67,16 @@ export class Hud {
               <button type="button" id="play-toggle" title="Space" aria-keyshortcuts="Space">Play</button>
               <button type="button" id="dir-forward" class="active" title="Play forward, or step ahead when paused">Forward ▶</button>
             </div>
-            <label class="hold-control" for="hold-seconds">Hold
-              <input id="hold-seconds" type="number" min="0.1" max="10" step="0.1" value="0.4" />
-              <span>s</span>
-            </label>
-            <label class="narrate-control" for="narrate-descriptions">
-              <input id="narrate-descriptions" type="checkbox" checked />
-              Narrate descriptions
-            </label>
+            <div class="row playback-opts">
+              <label class="hold-control" for="hold-seconds">Hold
+                <input id="hold-seconds" type="number" min="0.1" max="10" step="0.1" value="0.4" />
+                <span>s</span>
+              </label>
+              <label class="narrate-control" for="narrate-toggle" title="Read each invention aloud">
+                <input id="narrate-toggle" type="checkbox" checked />
+                Narrate
+              </label>
+            </div>
             <div class="clock-compact">
               <div id="clock">—</div>
               <div class="now-era" id="now-era">Looking across 3.3 million years</div>
@@ -123,7 +125,7 @@ export class Hud {
     this.eraEl = root.querySelector('#now-era') as HTMLElement
     this.playBtn = root.querySelector('#play-toggle') as HTMLButtonElement
     this.holdInput = root.querySelector('#hold-seconds') as HTMLInputElement
-    this.narrateInput = root.querySelector('#narrate-descriptions') as HTMLInputElement
+    this.narrateInput = root.querySelector('#narrate-toggle') as HTMLInputElement
     this.searchInput = root.querySelector('#search') as HTMLInputElement
     this.searchResults = root.querySelector('#search-results') as HTMLElement
     this.eraBanner = root.querySelector('#era-banner') as HTMLElement
@@ -146,9 +148,7 @@ export class Hud {
     })
     this.narrateInput.addEventListener('change', () => {
       handlers.onNarrationChange(this.narrateInput.checked)
-      this.syncHoldEnabled()
     })
-    this.syncHoldEnabled()
     root.querySelector('#dir-reverse')?.addEventListener('click', () => handlers.onDirection(-1))
     root.querySelector('#dir-forward')?.addEventListener('click', () => handlers.onDirection(1))
     root.querySelector('#intro-play')?.addEventListener('click', () => {
@@ -212,15 +212,6 @@ export class Hud {
 
   setNarrationEnabled(enabled: boolean): void {
     this.narrateInput.checked = enabled
-    this.syncHoldEnabled()
-  }
-
-  private syncHoldEnabled(): void {
-    const narrating = this.narrateInput.checked
-    this.holdInput.disabled = narrating
-    this.holdInput.title = narrating
-      ? 'Hold is driven by narration length while Narrate is on'
-      : 'Seconds to pause on each invention during playback'
   }
 
   setDirection(direction: 1 | -1): void {
