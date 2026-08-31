@@ -89,6 +89,13 @@ describe('catalog', () => {
     expect(all.some((item) => item.title === 'World Wide Web')).toBe(true)
   })
 
+  it('does not treat news orgs or journals as inventions', () => {
+    const junk =
+      /^(NPR|BBC|BBC News|CBC Radio|Reuters|Elsevier|Science|Science \(journal\)|Nature|Time Magazine|Proceedings of the National Academy of Sciences)$/i
+    const bad = all.filter((item) => junk.test(item.title) || junk.test(item.wikipediaTitle ?? ''))
+    expect(bad.map((item) => `${item.title} (${item.dateDisplay})`)).toEqual([])
+  })
+
   it('keeps Wikipedia links and does not invent exact prehistoric years', () => {
     for (const item of all) {
       if (item.wikipediaUrl) {

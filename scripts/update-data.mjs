@@ -24,7 +24,9 @@ const SOURCE_URL = 'https://en.wikipedia.org/wiki/Timeline_of_historic_invention
 const PRESENT = 2026
 
 const SKIP_SECTIONS = new Set(['See also', 'Notes', 'Footnotes', 'References', 'External links'])
-const JUNK_TITLES = /^(lawsuit|time magazine|bell labs|bell telephone laboratories|holy roman empire|mainz|germany|france|italy|china|japan|india|kenya|ethiopia|africa|europe|asia|united states|england|britain)$/i
+const JUNK_TITLES =
+  /^(lawsuit|time magazine|time \(magazine\)|bell labs|bell telephone laboratories|holy roman empire|mainz|germany|france|italy|china|japan|india|kenya|ethiopia|africa|europe|asia|united states|england|britain|npr|bbc|bbc news|reuters|new york times|the new york times|cnn|the guardian|washington post|the washington post|associated press|cbc radio|cbc|usa today|british broadcasting corporation|elsevier|science|science \(journal\)|nature|nature \(journal\)|proceedings of the national academy of sciences|deutsches archäologisches institut|archaeological survey of india)$/i
+const JUNK_TITLE_HINT = /\bjournal\b|^proceedings of the |magazine$/i
 const PERSON_NAME = /^[A-Z][a-z]+(?:\s+[A-Z][a-z.'-]+){1,3}$/
 const GENERIC_TITLES = new Set([
   'Internet',
@@ -128,11 +130,12 @@ function parseWikitext(text) {
     const depth = list[1].length
     const body = list[2]
     if (!body || body.startsWith('[[File:') || body.startsWith('[[Image:')) continue
+    if (/^\{\{\s*cite/i.test(body) || /^<ref/i.test(body)) continue
 
     const dateChunk = extractDateChunk(body)
     if (dateChunk) pendingDate = dateChunk
     else if (depth > 1 && pendingDate) {
-      // inherit parent date
+      // inherit parent date onto nested inventions only
     } else if (!dateChunk && !pendingDate) {
       const inferred = inferDateFromSection(section)
       if (!inferred) continue
@@ -142,11 +145,14 @@ function parseWikitext(text) {
       if (inferred) pendingDate = inferred
     }
 
-    const clean = cleanWikitext(body.replace(/^'''[^']+'''\s*:?\s*/, ''))
+    const visible = stripCitations(body)
+    const clean = cleanWikitext(visible.replace(/^'''[^']+'''\s*:?\s*/, ''))
     if (!clean || clean.length < 3) continue
-    const links = wikiLinks(body)
+    // Date-only headers such as "70 kya in Sibudu Cave:" introduce nested inventions.
+    if (depth === 1 && /:\s*$/.test(clean)) continue
+    const links = wikiLinks(visible)
     const wiki = pickWiki(links, clean)
-    if (!wiki) continue
+    if (!wiki || isJunkTitle(wiki.title) || isJunkTitle(wiki.text)) continue
 
     const parsedDate = parseDate(pendingDate?.raw ?? '', section)
     if (!Number.isFinite(parsedDate.start)) continue
@@ -331,6 +337,22 @@ function ordinal(n) {
   return `${n}th`
 }
 
+function stripCitations(text) {
+  let out = text.replace(/<ref[^/]*>[\s\S]*?<\/ref>/gi, '')
+  out = out.replace(/<ref[^>]*\/>/gi, '')
+  out = out.replace(/<ref[^/]*>[\s\S]*$/gi, '')
+  let prev
+  do {
+    prev = out
+    out = out.replace(/\{\{[^{}]*\}\}/g, '')
+  } while (out !== prev)
+  return out
+}
+
+function isJunkTitle(title) {
+  return JUNK_TITLES.test(title) || JUNK_TITLE_HINT.test(title)
+}
+
 function cleanWikitext(text) {
   let out = text
   let prev
@@ -388,10 +410,13 @@ function pickWiki(links, clean) {
   known.sort((a, b) => b.score - a.score)
   if (known[0]) return known[0]
 
-  const useful = links.filter((link) => !JUNK_TITLES.test(link.title) && !JUNK_TITLES.test(link.text) && !PERSON_NAME.test(link.text))
-  if (useful.length) return useful[useful.length - 1]
-  if (links.length >= 2 && PERSON_NAME.test(links[0].text)) return links[links.length - 1]
-  return links[0] ?? null
+  const useful = links.filter(
+    (link) => !isJunkTitle(link.title) && !isJunkTitle(link.text) && !PERSON_NAME.test(link.text),
+  )
+  // Invention is usually the first content link; later links are places or leftover cites.
+  if (useful.length) return useful[0]
+  if (links.length >= 2 && PERSON_NAME.test(links[0].text)) return links[1]
+  return useful[0] ?? null
 }
 
 function pickLocation(clean, links) {
@@ -533,6 +558,17 @@ function validate(inventions) {
     }
     if (item.dateStart < 0 && item.dateDisplay.includes('CE') && !item.dateDisplay.includes('BCE')) {
       console.warn(`BCE stored as CE display: ${item.title} ${item.dateDisplay}`)
+      errors += 1
+    }
+    if (isJunkTitle(item.title) || isJunkTitle(item.wikipediaTitle ?? '')) {
+      console.warn(`Junk title: ${item.title} (${item.wikipediaTitle}) ${item.dateDisplay}`)
+      errors += 1
+    }
+    if (
+      item.dateStart < -10_000 &&
+      /\b(19th|20th|21st) century\b|\b(radio|television|website|broadcast)\b/i.test(item.description)
+    ) {
+      console.warn(`Date vs description: ${item.title} ${item.dateDisplay}`)
       errors += 1
     }
   }
