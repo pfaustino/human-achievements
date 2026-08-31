@@ -1,4 +1,5 @@
 import './style.css'
+import { Narration, NARRATION_HOLD_PAD } from './audio/Narration.ts'
 import {
   erasAt,
   loadCategories,
@@ -14,6 +15,7 @@ import { Hud, type HudHandlers } from './ui/Hud.ts'
 
 const PLAY_MS = 92_000
 const HOLD_STORAGE_KEY = 'human-achievements-hold-seconds'
+const NARRATION_STORAGE_KEY = 'human-achievements-narrate'
 
 function loadHoldSeconds(): number {
   try {
@@ -33,6 +35,24 @@ function saveHoldSeconds(seconds: number): void {
   }
 }
 
+function loadNarrationEnabled(): boolean {
+  try {
+    const raw = localStorage.getItem(NARRATION_STORAGE_KEY)
+    if (raw == null) return true
+    return raw === '1' || raw === 'true'
+  } catch {
+    return true
+  }
+}
+
+function saveNarrationEnabled(enabled: boolean): void {
+  try {
+    localStorage.setItem(NARRATION_STORAGE_KEY, enabled ? '1' : '0')
+  } catch {
+    // ignore
+  }
+}
+
 const stage = document.querySelector<HTMLElement>('#stage')
 const hudRoot = document.querySelector<HTMLElement>('#hud')
 if (!stage || !hudRoot) throw new Error('Missing #stage or #hud')
@@ -41,12 +61,15 @@ const allInventions = loadInventions()
 const allEras = loadEras()
 const categories = loadCategories()
 const playback = new Playback()
+const narration = new Narration()
+narration.enabled = loadNarrationEnabled()
 
 let filters = { category: 'all', historical: 'all', technology: 'all', region: 'all' }
 
 const timeline = new TimelineView(stage, {
   onSelect: (event) => {
     if (!event) {
+      narration.cancel()
       hud.clearEvent()
       timeline.setSelected(null)
       return
@@ -58,6 +81,10 @@ const timeline = new TimelineView(stage, {
 const handlers: HudHandlers = {
   onPlayToggle: () => {
     playback.playing = !playback.playing
+    if (!playback.playing) {
+      narration.cancel()
+      playback.releaseHold()
+    }
     hud.setPlaying(playback.playing)
     timeline.setRevealOnly(playback.playing)
   },
@@ -94,7 +121,18 @@ const handlers: HudHandlers = {
     playback.setHoldSeconds(seconds)
     saveHoldSeconds(playback.holdSeconds)
   },
+  onNarrationChange: (enabled) => {
+    narration.enabled = enabled
+    saveNarrationEnabled(enabled)
+    if (!enabled) {
+      narration.cancel()
+      if (playback.focusing && playback.playing) {
+        playback.holdForMs(playback.dwellMs())
+      }
+    }
+  },
   onSkipIntro: () => {
+    narration.cancel()
     timeline.setRevealOnly(false)
     playback.playing = false
     hud.setPlaying(false)
@@ -104,8 +142,10 @@ const handlers: HudHandlers = {
 const hud = new Hud(hudRoot, handlers)
 playback.setHoldSeconds(loadHoldSeconds())
 hud.setHoldSeconds(playback.holdSeconds)
+hud.setNarrationEnabled(narration.enabled)
 
 function applyCatalog(): void {
+  narration.cancel()
   const filtered = allInventions.filter((item) => matchesFilters(item, filters))
   playback.setEvents(filtered, allEras, PLAY_MS)
   timeline.setData(filtered, allEras, categories)
@@ -118,6 +158,7 @@ function applyCatalog(): void {
 
 function startJourney(duration: number): void {
   hud.hideIntro()
+  narration.cancel()
   playback.startFromBeginning(duration)
   timeline.resetView()
   timeline.setRevealOnly(true)
@@ -126,6 +167,7 @@ function startJourney(duration: number): void {
 }
 
 function focusEvent(event: Invention): void {
+  narration.cancel()
   playback.selectEvent(event)
   playback.playing = false
   timeline.setRevealOnly(false)
@@ -134,6 +176,7 @@ function focusEvent(event: Invention): void {
   hud.showEvent(event)
   hud.setPlaying(false)
   hud.setClock(event.dateStart, eraCaption(event.dateStart))
+  speakDescription(event, false)
 }
 
 function stepEvent(direction: -1 | 1): void {
@@ -143,6 +186,22 @@ function stepEvent(direction: -1 | 1): void {
   timeline.setRevealOnly(false)
   if (!event) return
   focusEvent(event)
+}
+
+function speakDescription(event: Invention, holdPlayback: boolean): void {
+  if (!narration.enabled) {
+    if (holdPlayback) playback.holdForMs(playback.dwellMs())
+    return
+  }
+  const eventId = event.id
+  const estimated = narration.speak(event.description, {
+    onEnd: () => {
+      if (!holdPlayback) return
+      if (playback.focused?.id !== eventId) return
+      playback.releaseHold()
+    },
+  })
+  if (holdPlayback) playback.holdForMs(Math.round(estimated * NARRATION_HOLD_PAD))
 }
 
 function eraCaption(year: number): string {
@@ -158,9 +217,11 @@ function onFocus(event: Invention): void {
   timeline.setSelected(event.id)
   timeline.setPlayhead(event.dateStart)
   hud.showEvent(event)
+  speakDescription(event, true)
 }
 
 function onEra(era: Era): void {
+  narration.cancel()
   timeline.pulseEra(era.id)
   hud.showEra(era)
 }
@@ -174,6 +235,7 @@ function frame(now: number): void {
   timeline.tick(dt / 1000)
   hud.setClock(playback.playhead, eraCaption(playback.playhead))
   if (ended) {
+    narration.cancel()
     timeline.setRevealOnly(false)
     hud.setPlaying(false)
   }

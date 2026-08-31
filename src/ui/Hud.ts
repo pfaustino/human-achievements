@@ -15,6 +15,7 @@ export type HudHandlers = {
   onSearchSelect: (event: Invention) => void
   onSkipIntro: () => void
   onHoldChange: (seconds: number) => void
+  onNarrationChange: (enabled: boolean) => void
 }
 
 export class Hud {
@@ -25,6 +26,7 @@ export class Hud {
   private readonly eraEl: HTMLElement
   private readonly playBtn: HTMLButtonElement
   private readonly holdInput: HTMLInputElement
+  private readonly narrateInput: HTMLInputElement
   private readonly searchInput: HTMLInputElement
   private readonly searchResults: HTMLElement
   private readonly eraBanner: HTMLElement
@@ -68,6 +70,10 @@ export class Hud {
             <label class="hold-control" for="hold-seconds">Hold
               <input id="hold-seconds" type="number" min="0.1" max="10" step="0.1" value="0.4" />
               <span>s</span>
+            </label>
+            <label class="narrate-control" for="narrate-descriptions">
+              <input id="narrate-descriptions" type="checkbox" checked />
+              Narrate descriptions
             </label>
             <div class="clock-compact">
               <div id="clock">—</div>
@@ -117,6 +123,7 @@ export class Hud {
     this.eraEl = root.querySelector('#now-era') as HTMLElement
     this.playBtn = root.querySelector('#play-toggle') as HTMLButtonElement
     this.holdInput = root.querySelector('#hold-seconds') as HTMLInputElement
+    this.narrateInput = root.querySelector('#narrate-descriptions') as HTMLInputElement
     this.searchInput = root.querySelector('#search') as HTMLInputElement
     this.searchResults = root.querySelector('#search-results') as HTMLElement
     this.eraBanner = root.querySelector('#era-banner') as HTMLElement
@@ -137,6 +144,11 @@ export class Hud {
       handlers.onHoldChange(seconds)
       this.setHoldSeconds(seconds)
     })
+    this.narrateInput.addEventListener('change', () => {
+      handlers.onNarrationChange(this.narrateInput.checked)
+      this.syncHoldEnabled()
+    })
+    this.syncHoldEnabled()
     root.querySelector('#dir-reverse')?.addEventListener('click', () => handlers.onDirection(-1))
     root.querySelector('#dir-forward')?.addEventListener('click', () => handlers.onDirection(1))
     root.querySelector('#intro-play')?.addEventListener('click', () => {
@@ -196,6 +208,19 @@ export class Hud {
   setHoldSeconds(seconds: number): void {
     const display = String(seconds)
     if (this.holdInput.value !== display) this.holdInput.value = display
+  }
+
+  setNarrationEnabled(enabled: boolean): void {
+    this.narrateInput.checked = enabled
+    this.syncHoldEnabled()
+  }
+
+  private syncHoldEnabled(): void {
+    const narrating = this.narrateInput.checked
+    this.holdInput.disabled = narrating
+    this.holdInput.title = narrating
+      ? 'Hold is driven by narration length while Narrate is on'
+      : 'Seconds to pause on each invention during playback'
   }
 
   setDirection(direction: 1 | -1): void {

@@ -163,11 +163,36 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  margin: 0 12px 8px 0;
+  color: var(--muted);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.narrate-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   margin: 0 0 8px;
   color: var(--muted);
   font-size: 12px;
   letter-spacing: 0.04em;
   text-transform: uppercase;
+  cursor: pointer;
+  user-select: none;
+}
+
+.narrate-control input {
+  accent-color: var(--accent, #c4a574);
+  width: 14px;
+  height: 14px;
+  margin: 0;
+}
+
+.hold-control input:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 .hold-control input {

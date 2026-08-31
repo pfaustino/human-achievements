@@ -113,6 +113,19 @@ export class Playback {
     return dwellMs(this.holdSeconds)
   }
 
+  /** Hold the playhead on the focused event for an explicit duration (e.g. TTS). */
+  holdForMs(ms: number): void {
+    const dwell = Math.max(0, ms)
+    this.focusRemain = dwell
+    this.focusing = dwell > 0
+  }
+
+  /** End the current auto-hold early (speech finished). */
+  releaseHold(): void {
+    this.focusRemain = 0
+    this.focusing = false
+  }
+
   selectEvent(event: Invention): void {
     this.focusEvent(event, false)
   }
