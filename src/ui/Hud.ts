@@ -16,6 +16,7 @@ export type HudHandlers = {
   onSkipIntro: () => void
   onHoldChange: (seconds: number) => void
   onNarrationChange: (enabled: boolean) => void
+  onVoiceChange: (voiceId: string) => void
 }
 
 export class Hud {
@@ -27,6 +28,8 @@ export class Hud {
   private readonly playBtn: HTMLButtonElement
   private readonly holdInput: HTMLInputElement
   private readonly narrateInput: HTMLInputElement
+  private readonly voiceControl: HTMLElement
+  private readonly voiceSelect: HTMLSelectElement
   private readonly searchInput: HTMLInputElement
   private readonly searchResults: HTMLElement
   private readonly eraBanner: HTMLElement
@@ -75,6 +78,10 @@ export class Hud {
               <label class="narrate-control" for="narrate-toggle" title="Read each invention aloud">
                 <input id="narrate-toggle" type="checkbox" checked />
                 Narrate
+              </label>
+              <label class="voice-control" for="voice-select" hidden title="Voices come from your browser and operating system">
+                Voice
+                <select id="voice-select" aria-label="Narration voice"></select>
               </label>
             </div>
             <div class="clock-compact">
@@ -126,6 +133,8 @@ export class Hud {
     this.playBtn = root.querySelector('#play-toggle') as HTMLButtonElement
     this.holdInput = root.querySelector('#hold-seconds') as HTMLInputElement
     this.narrateInput = root.querySelector('#narrate-toggle') as HTMLInputElement
+    this.voiceControl = root.querySelector('.voice-control') as HTMLElement
+    this.voiceSelect = root.querySelector('#voice-select') as HTMLSelectElement
     this.searchInput = root.querySelector('#search') as HTMLInputElement
     this.searchResults = root.querySelector('#search-results') as HTMLElement
     this.eraBanner = root.querySelector('#era-banner') as HTMLElement
@@ -148,6 +157,9 @@ export class Hud {
     })
     this.narrateInput.addEventListener('change', () => {
       handlers.onNarrationChange(this.narrateInput.checked)
+    })
+    this.voiceSelect.addEventListener('change', () => {
+      handlers.onVoiceChange(this.voiceSelect.value)
     })
     root.querySelector('#dir-reverse')?.addEventListener('click', () => handlers.onDirection(-1))
     root.querySelector('#dir-forward')?.addEventListener('click', () => handlers.onDirection(1))
@@ -212,6 +224,21 @@ export class Hud {
 
   setNarrationEnabled(enabled: boolean): void {
     this.narrateInput.checked = enabled
+  }
+
+  setVoiceOptions(options: { value: string; label: string }[], selected: string): void {
+    const empty = options.length === 0
+    this.voiceControl.hidden = empty
+    if (empty) {
+      this.voiceSelect.innerHTML = ''
+      return
+    }
+    this.voiceSelect.innerHTML = options
+      .map((option) => `<option value="${escapeHtml(option.value)}">${escapeHtml(option.label)}</option>`)
+      .join('')
+    if (selected && options.some((option) => option.value === selected)) {
+      this.voiceSelect.value = selected
+    }
   }
 
   setDirection(direction: 1 | -1): void {

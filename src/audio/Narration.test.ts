@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest'
-import { Narration, estimateSpeechMs, narrationText } from './Narration.ts'
+import { NARRATION_PITCH, NARRATION_RATE, Narration, estimateSpeechMs, narrationText } from './Narration.ts'
 
 describe('estimateSpeechMs', () => {
   it('scales with word count for description-length copy', () => {
@@ -37,19 +37,22 @@ describe('Narration speak/cancel', () => {
       rate = 1
       pitch = 1
       lang = ''
+      voice: object | null = null
       onend: (() => void) | null = null
       onerror: (() => void) | null = null
       constructor(text: string) {
         this.text = text
       }
     }
+    const spokenUtterances: InstanceType<typeof utterance>[] = []
     ;(globalThis as { window?: object }).window = {
       speechSynthesis: {
         cancel: () => {
           cancels += 1
         },
-        speak: (next: { text: string }) => {
+        speak: (next: InstanceType<typeof utterance>) => {
           spoken.push(next.text)
+          spokenUtterances.push(next)
         },
         speaking: false,
       },
@@ -63,5 +66,7 @@ describe('Narration speak/cancel', () => {
     expect(cancelsAfterFirst).toBeGreaterThan(0)
     expect(cancels).toBeGreaterThan(cancelsAfterFirst)
     expect(spoken).toEqual(['First invention', 'Second invention'])
+    expect(spokenUtterances[0]?.rate).toBe(NARRATION_RATE)
+    expect(spokenUtterances[0]?.pitch).toBe(NARRATION_PITCH)
   })
 })

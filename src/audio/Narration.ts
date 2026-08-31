@@ -4,6 +4,8 @@ export const NARRATION_WPM = 140
 export const NARRATION_TAIL_MS = 450
 export const NARRATION_MIN_MS = 900
 export const NARRATION_HOLD_PAD = 1.2
+export const NARRATION_RATE = 0.95
+export const NARRATION_PITCH = 1.03
 
 export function estimateSpeechMs(
   text: string,
@@ -35,10 +37,15 @@ export class Narration {
   private utterance: SpeechSynthesisUtterance | null = null
   private generation = 0
   enabled = true
+  voice: SpeechSynthesisVoice | null = null
+
+  setVoice(voice: SpeechSynthesisVoice | null): void {
+    this.voice = voice
+  }
 
   speak(text: string, handlers: SpeakHandlers = {}): number {
     const cleaned = narrationText(text)
-    const estimated = estimateSpeechMs(cleaned)
+    const estimated = Math.round(estimateSpeechMs(cleaned) / NARRATION_RATE)
     this.cancel()
     if (!cleaned || !this.enabled || !isSpeechSupported()) {
       handlers.onEnd?.()
@@ -47,9 +54,10 @@ export class Narration {
 
     const generation = ++this.generation
     const utterance = new SpeechSynthesisUtterance(cleaned)
-    utterance.rate = 1
-    utterance.pitch = 1
-    utterance.lang = 'en-US'
+    utterance.rate = NARRATION_RATE
+    utterance.pitch = NARRATION_PITCH
+    utterance.lang = this.voice?.lang || 'en-US'
+    if (this.voice) utterance.voice = this.voice
     this.utterance = utterance
 
     const finish = (fn?: () => void) => {

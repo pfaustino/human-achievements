@@ -194,6 +194,29 @@ body {
   margin: 0;
 }
 
+.voice-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.voice-control select {
+  max-width: 11.5em;
+  border: 1px solid #3a4658;
+  background: #141b26;
+  color: #e8e4d9;
+  padding: 4px 6px;
+  font: inherit;
+  font-size: 12px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
 .hold-control input:disabled {
   opacity: 0.45;
   cursor: not-allowed;

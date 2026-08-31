@@ -1,5 +1,14 @@
 import './style.css'
 import { Narration, NARRATION_HOLD_PAD, isSpeechSupported } from './audio/Narration.ts'
+import {
+  VOICE_STORAGE_KEY,
+  englishVoices,
+  friendlyVoiceName,
+  listSpeechVoices,
+  matchVoice,
+  subscribeVoices,
+  voiceId,
+} from './audio/voices.ts'
 import { buildNarration } from './ui/narrate.ts'
 import {
   erasAt,
@@ -51,6 +60,22 @@ function saveNarrationEnabled(enabled: boolean): void {
     localStorage.setItem(NARRATION_STORAGE_KEY, enabled ? '1' : '0')
   } catch {
     // ignore
+  }
+}
+
+function loadSavedVoice(): string | null {
+  try {
+    return localStorage.getItem(VOICE_STORAGE_KEY)
+  } catch {
+    return null
+  }
+}
+
+function saveVoice(id: string): void {
+  try {
+    localStorage.setItem(VOICE_STORAGE_KEY, id)
+  } catch {
+    // Private mode or blocked storage should not stop narration.
   }
 }
 
@@ -132,6 +157,14 @@ const handlers: HudHandlers = {
       }
     }
   },
+  onVoiceChange: (id) => {
+    const all = listSpeechVoices()
+    const english = englishVoices(all)
+    const pool = english.length > 0 ? english : all
+    const chosen = matchVoice(pool, id)
+    narration.setVoice(chosen)
+    if (id) saveVoice(id)
+  },
   onSkipIntro: () => {
     narration.cancel()
     timeline.setRevealOnly(false)
@@ -144,6 +177,17 @@ const hud = new Hud(hudRoot, handlers)
 playback.setHoldSeconds(loadHoldSeconds())
 hud.setHoldSeconds(playback.holdSeconds)
 hud.setNarrationEnabled(narration.enabled)
+
+subscribeVoices((voices) => {
+  const english = englishVoices(voices)
+  const pool = english.length > 0 ? english : voices
+  const chosen = matchVoice(pool, loadSavedVoice())
+  narration.setVoice(chosen)
+  hud.setVoiceOptions(
+    pool.map((voice) => ({ value: voiceId(voice), label: friendlyVoiceName(voice.name) })),
+    chosen ? voiceId(chosen) : '',
+  )
+})
 
 function applyCatalog(): void {
   narration.cancel()
