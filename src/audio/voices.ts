@@ -23,6 +23,14 @@ export function isEnglishVoice(voice: VoiceLike): boolean {
   return /^en([-_]|$)/i.test(voice.lang)
 }
 
+/** Chrome's "Google UK English Male", or any Google en-GB male voice. */
+export function isGoogleUkEnglishMale(voice: VoiceLike): boolean {
+  const name = voice.name.toLowerCase()
+  if (name.includes('google uk english male')) return true
+  const lang = voice.lang.replace('_', '-').toLowerCase()
+  return lang.startsWith('en-gb') && name.includes('google') && /\bmale\b/.test(name)
+}
+
 export function englishVoices<T extends VoiceLike>(voices: T[]): T[] {
   return voices.filter(isEnglishVoice)
 }
@@ -66,6 +74,8 @@ export function scoreVoice(voice: VoiceLike): number {
 
 export function pickBestVoice<T extends VoiceLike>(voices: T[]): T | null {
   if (voices.length === 0) return null
+  const preferred = voices.find(isGoogleUkEnglishMale)
+  if (preferred) return preferred
   return voices.slice().sort((a, b) => {
     const diff = scoreVoice(b) - scoreVoice(a)
     if (diff !== 0) return diff

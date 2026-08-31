@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   englishVoices,
   friendlyVoiceName,
+  isGoogleUkEnglishMale,
   matchVoice,
   pickBestVoice,
   scoreVoice,
@@ -60,6 +61,30 @@ describe('pickBestVoice', () => {
   it('returns null when the list is empty', () => {
     expect(pickBestVoice([])).toBeNull()
   })
+
+  it('defaults to Google UK English Male when that voice exists', () => {
+    const ukMale = voice({ name: 'Google UK English Male', lang: 'en-GB' })
+    const aria = voice({ name: 'Microsoft Aria Online (Natural) - English (United States)' })
+    const us = voice({ name: 'Google US English' })
+    expect(pickBestVoice([aria, us, ukMale])).toEqual(ukMale)
+  })
+})
+
+describe('isGoogleUkEnglishMale', () => {
+  it('matches the Chrome name case-insensitively', () => {
+    expect(isGoogleUkEnglishMale(voice({ name: 'google uk english male', lang: 'en-GB' }))).toBe(true)
+  })
+
+  it('matches Google + Male on an en-GB voice', () => {
+    expect(isGoogleUkEnglishMale(voice({ name: 'Google English Male', lang: 'en-GB' }))).toBe(true)
+    expect(isGoogleUkEnglishMale(voice({ name: 'Google English Male', lang: 'en_GB' }))).toBe(true)
+  })
+
+  it('does not match US Google, female, or non-Google en-GB voices', () => {
+    expect(isGoogleUkEnglishMale(voice({ name: 'Google US English' }))).toBe(false)
+    expect(isGoogleUkEnglishMale(voice({ name: 'Google UK English Female', lang: 'en-GB' }))).toBe(false)
+    expect(isGoogleUkEnglishMale(voice({ name: 'Microsoft Sonia', lang: 'en-GB' }))).toBe(false)
+  })
 })
 
 describe('matchVoice', () => {
@@ -73,6 +98,13 @@ describe('matchVoice', () => {
   it('falls back when the saved voice is gone', () => {
     const aria = voice({ name: 'Microsoft Aria Online (Natural)', voiceURI: 'aria' })
     expect(matchVoice([aria], 'missing')).toEqual(aria)
+  })
+
+  it('keeps a saved voice instead of defaulting to Google UK English Male', () => {
+    const ukMale = voice({ name: 'Google UK English Male', lang: 'en-GB', voiceURI: 'uk-male' })
+    const aria = voice({ name: 'Microsoft Aria Online (Natural)', voiceURI: 'aria' })
+    expect(matchVoice([ukMale, aria], 'aria')).toEqual(aria)
+    expect(matchVoice([ukMale, aria], null)).toEqual(ukMale)
   })
 })
 
