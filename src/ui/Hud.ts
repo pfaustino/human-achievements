@@ -105,7 +105,7 @@ export class Hud {
             <button type="button" class="panel-toggle" aria-expanded="true">Collapse</button>
           </header>
           <div class="panel-body" id="event-card">
-            <p class="muted">Click a milestone, or play through history.</p>
+            <p class="muted">Play through history or use Left and Arrow keys + Spacebar to navigate the timeline</p>
           </div>
         </section>
       </div>
@@ -270,7 +270,7 @@ export class Hud {
     this.wikiImageRequest += 1
     this.cardTitleEl.textContent = 'Invention'
     this.cardPanel.classList.remove('live')
-    this.cardEl.innerHTML = `<p class="muted">Click a milestone, or play through history.</p>`
+    this.cardEl.innerHTML = `<p class="muted">Play through history or use Left and Arrow keys + Spacebar to navigate the timeline</p>`
   }
 
   private showWikiZoom(src: string, alt: string): void {
