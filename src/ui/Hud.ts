@@ -41,7 +41,7 @@ export class Hud {
         <p class="intro-kicker">Human Achievements</p>
         <h1>The History of Human Invention</h1>
         <p class="intro-sub">3.3 million years of human ingenuity</p>
-        <p class="intro-hint">Play through history, or click an invention to discover its story.</p>
+        <p class="intro-hint">use Left and Right arrow keys +Spacebar to navigate the timeline</p>
         <div class="intro-actions">
           <button type="button" id="intro-play">Play through history</button>
           <button type="button" id="intro-skip" class="ghost">Skip</button>
@@ -104,9 +104,7 @@ export class Hud {
             <h2 id="card-title">Invention</h2>
             <button type="button" class="panel-toggle" aria-expanded="true">Collapse</button>
           </header>
-          <div class="panel-body" id="event-card">
-            <p class="muted">Play through history or use Left and Arrow keys + Spacebar to navigate the timeline</p>
-          </div>
+          <div class="panel-body" id="event-card"></div>
         </section>
       </div>
       <p class="float-hint" id="float-hint">Play through history · Click to read</p>
@@ -270,7 +268,7 @@ export class Hud {
     this.wikiImageRequest += 1
     this.cardTitleEl.textContent = 'Invention'
     this.cardPanel.classList.remove('live')
-    this.cardEl.innerHTML = `<p class="muted">Play through history or use Left and Arrow keys + Spacebar to navigate the timeline</p>`
+    this.cardEl.innerHTML = ''
   }
 
   private showWikiZoom(src: string, alt: string): void {
