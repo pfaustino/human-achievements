@@ -35,6 +35,8 @@ export type Invention = {
   dateDisplay: string
   datePrecision: DatePrecision
   description: string
+  /** Wikipedia article lead (plain text, 1–3 paragraphs). Empty if the extract was missing. */
+  summary?: string
   significance?: string
   location?: InventionLocation
   inventor?: string[]

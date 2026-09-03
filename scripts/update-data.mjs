@@ -8,6 +8,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { RELATED, SIGNIFICANCE, TIER1, TIER2_TITLES, TITLE_FIXES } from './overrides.mjs'
+import { attachSummaries } from './wiki-summaries.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const CACHE_DIR = join(ROOT, 'scripts', 'cache')
@@ -74,6 +75,7 @@ const inventions = parsed
 
 dedupe(inventions)
 validate(inventions)
+const { filled, failed } = await attachSummaries(inventions)
 
 const catalog = {
   source: {
@@ -87,6 +89,7 @@ const catalog = {
 
 await writeFile(OUT_FILE, `${JSON.stringify(catalog, null, 2)}\n`, 'utf8')
 console.log(`Wrote ${inventions.length} inventions to data/inventions.json`)
+console.log(`Summaries: ${filled} filled, ${failed} empty`)
 
 async function loadWikitext() {
   try {

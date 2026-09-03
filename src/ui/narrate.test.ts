@@ -48,6 +48,29 @@ describe('buildNarration', () => {
     expect(script).toMatch(/Thomas Edison/)
   })
 
+  it('prefers summary over a stub description', () => {
+    const withSummary = buildNarration(
+      fields({
+        title: 'Compound adhesives',
+        dateDisplay: 'c. 70–60 thousand years ago',
+        description: 'Compound adhesives',
+        summary:
+          'Adhesive is a substance that is capable of holding materials together by surface attachment. Compound adhesives mix more than one ingredient to improve strength and durability in tools and construction.',
+      }),
+    )
+    const titleOnly = buildNarration(
+      fields({
+        title: 'Compound adhesives',
+        dateDisplay: 'c. 70–60 thousand years ago',
+        description: 'Compound adhesives',
+      }),
+    )
+    expect(withSummary).toMatch(/surface attachment/)
+    expect(withSummary).not.toMatch(/Compound adhesives\. Circa 70 to 60 thousand years ago\. Compound adhesives/)
+    expect(withSummary.length).toBeGreaterThan(titleOnly.length)
+    expect(titleOnly.length).toBeLessThan(120)
+  })
+
   it('stays bounded', () => {
     const script = buildNarration(
       fields({

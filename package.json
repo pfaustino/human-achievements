@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "check": "npm run typecheck && npm run test && npm run build",
-    "update-data": "node scripts/update-data.mjs"
+    "update-data": "node scripts/update-data.mjs",
+    "update-summaries": "node scripts/update-summaries.mjs"
   },
   "devDependencies": {
     "typescript": "~5.9.2",

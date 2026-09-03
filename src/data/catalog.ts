@@ -42,6 +42,7 @@ export function searchInventions(query: string, inventions: Invention[]): Invent
     const hay = [
       item.title,
       item.description,
+      item.summary ?? '',
       item.significance ?? '',
       item.inventor?.join(' ') ?? '',
       item.location?.name ?? '',

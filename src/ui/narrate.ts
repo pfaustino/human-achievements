@@ -1,11 +1,11 @@
 import type { Invention, InventionLocation } from '../data/types.ts'
 
-/** Keep slides from rambling; still long enough for a few spoken sentences. */
-export const NARRATION_MAX_CHARS = 560
+/** Long enough for a Wikipedia lead (1–3 paragraphs), not the whole article. */
+export const NARRATION_MAX_CHARS = 1800
 
 export type NarrationFields = Pick<
   Invention,
-  'title' | 'dateDisplay' | 'description' | 'inventor' | 'significance' | 'location'
+  'title' | 'dateDisplay' | 'description' | 'summary' | 'inventor' | 'significance' | 'location'
 >
 
 export function buildNarration(event: NarrationFields): string {
@@ -22,7 +22,8 @@ export function buildNarration(event: NarrationFields): string {
   const inventorLine = spokenInventor(inventors, spokenSoFar())
   if (inventorLine) sentences.push(inventorLine)
 
-  const description = spokenDescription(event.description, event.title)
+  const body = event.summary?.trim() || event.description
+  const description = spokenDescription(body, event.title)
   if (description) sentences.push(description)
 
   const why = spokenSignificance(event.significance, spokenSoFar())

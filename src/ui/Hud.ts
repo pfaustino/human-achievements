@@ -288,7 +288,9 @@ export class Hud {
     this.cardEl.innerHTML = `
       <p class="mag ${dateClass}">${escapeHtml(event.dateDisplay)}</p>
       ${inventors ? `<p class="who">${escapeHtml(inventors)}</p>` : ''}
-      <p class="what">${escapeHtml(event.description)}</p>
+      ${bodyParagraphs(event)
+        .map((paragraph) => `<p class="what">${escapeHtml(paragraph)}</p>`)
+        .join('')}
       ${event.significance ? `<div class="why"><h3>Why it matters</h3><p>${escapeHtml(event.significance)}</p></div>` : ''}
       <dl>
         <div><dt>Era</dt><dd>${escapeHtml(periods.slice(0, 4).join(' · ') || '—')}</dd></div>
@@ -368,7 +370,7 @@ export class Hud {
     }
     const hits = this.inventions
       .filter((item) => {
-        const hay = `${item.title} ${item.description} ${item.inventor?.join(' ') ?? ''} ${item.location?.name ?? ''} ${item.categories.join(' ')} ${item.historicalPeriod?.join(' ') ?? ''} ${item.technologyEra?.join(' ') ?? ''} ${item.archaeologicalPeriod?.join(' ') ?? ''}`.toLowerCase()
+        const hay = `${item.title} ${item.summary ?? ''} ${item.description} ${item.inventor?.join(' ') ?? ''} ${item.location?.name ?? ''} ${item.categories.join(' ')} ${item.historicalPeriod?.join(' ') ?? ''} ${item.technologyEra?.join(' ') ?? ''} ${item.archaeologicalPeriod?.join(' ') ?? ''}`.toLowerCase()
         return hay.includes(q)
       })
       .slice(0, 12)
@@ -427,6 +429,22 @@ export class Hud {
     button.textContent = collapsed ? 'Expand' : 'Collapse'
     button.setAttribute('aria-expanded', collapsed ? 'false' : 'true')
   }
+}
+
+function bodyParagraphs(event: Invention): string[] {
+  const text = event.summary?.trim() || event.description
+  if (!text) return []
+  const double = text
+    .split(/\n\s*\n/)
+    .map((paragraph) => paragraph.trim())
+    .filter(Boolean)
+  if (double.length > 1) return double
+  const single = text
+    .split(/\n/)
+    .map((paragraph) => paragraph.trim())
+    .filter(Boolean)
+  if (single.length > 1 && single.every((paragraph) => paragraph.length > 40)) return single
+  return [text.replace(/\s+/g, ' ').trim()]
 }
 
 function precisionLabel(precision: Invention['datePrecision']): string {
